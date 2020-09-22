@@ -12,6 +12,7 @@ const ControlledYouTubePlayer = ({
   useImperativeHandle(ref, () => playerRef.current)
 
   const [ready, setReady] = useState(false)
+  const [playerState, setPlayerState] = useState(-1)
 
   const videoStateRef = useLazyStateRef(video)
   const pausedStateRef = useLazyStateRef(paused)
@@ -66,7 +67,9 @@ const ControlledYouTubePlayer = ({
         clearInterval(handle)
       }
     }
-  }, [onProgress, ready])
+    // [playerState] in dependency array improves responsiveness
+    // when seeking
+  }, [onProgress, ready, playerState])
 
   useEffect(() => {
     if (ready) {
@@ -85,6 +88,7 @@ const ControlledYouTubePlayer = ({
       }, [onReady])}
       onStateChange={useCallback(e => {
         // console.log(e.data)
+        setPlayerState(e.data)
       }, [])}
       startTime={time}
     />
