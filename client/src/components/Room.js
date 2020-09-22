@@ -312,11 +312,11 @@ function Room() {
   useEffect(() => {
     const ro = new ResizeObserver(entries => {
       const containerWidth = entries[0].contentRect.width
-      const iframeHeight = entries[0].contentRect.height - chinContainerRef.current.clientHeight
-      const iframeWidth = iframeHeight * (16 / 9)
+      const iframeHeight = Math.ceil(entries[0].contentRect.height - chinContainerRef.current.clientHeight)
+      const iframeWidth = Math.floor(iframeHeight * (16 / 9))
 
       if (iframeWidth > containerWidth) {
-        setPlayerBounds([containerWidth, containerWidth * (9 / 16), 0])
+        setPlayerBounds([containerWidth, Math.ceil(containerWidth * (9 / 16)), 0])
       }
       else {
         const constrainedWidth = Math.min(iframeWidth, containerWidth)
