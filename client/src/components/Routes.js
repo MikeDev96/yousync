@@ -29,21 +29,19 @@ const Routes = () => {
   const classes = useStyles()
 
   return (
-    <Switch>
-      <div className={classes.root}>
-        {routes.map(({ path, Component, exact }) => (
-          <Route key={path} exact={exact} path={path}>
-            {({ match }) => (
-              <Fade in={match !== null} unmountOnExit timeout={600}>
-                <div className={classes.route}>
-                  <Component />
-                </div>
-              </Fade>
-            )}
-          </Route>
-        ))}
-      </div>
-    </Switch>
+    <div className={classes.root}>
+      {routes.map(({ path, Component, exact }) => (
+        <Route key={path} exact={exact} path={path}>
+          {({ match }) => (
+            <Fade in={match !== null} unmountOnExit timeout={600}>
+              <div className={classes.route}>
+                <Component />
+              </div>
+            </Fade>
+          )}
+        </Route>
+      ))}
+    </div>
   )
 }
 
