@@ -21,7 +21,7 @@ const useDefaultUsername = () => {
     catch (err) {
       console.log(err)
     }
-  }, [])
+  }, [dispatch])
 
   useEffect(() => {
     if (!state.persist.username) {

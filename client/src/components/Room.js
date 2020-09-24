@@ -263,7 +263,7 @@ function Room() {
         }
       }
     }
-  }, [playTime, playerState.elapsed, playerState.tick, playerStateRef, ready])
+  }, [playTime, playerState.elapsed, playerState.tick, playerStateRef, ready, state.persist.syncThreshold])
 
   const [seek, setSeek] = useState(0)
   const [userSeek, setUserSeek] = useState(-1)
