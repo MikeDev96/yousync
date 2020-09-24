@@ -3,7 +3,7 @@ import "../App.css"
 import AppBar from "@material-ui/core/AppBar"
 import { Toolbar, IconButton, Typography, makeStyles, ThemeProvider, createMuiTheme, CssBaseline, Button } from "@material-ui/core"
 import "fontsource-roboto"
-import SettingsIcon from '@material-ui/icons/Settings';
+import SettingsIcon from "@material-ui/icons/Settings";
 import SettingsDialog from "./SettingsDialog"
 import { useQueryParams, BooleanParam, withDefault } from "use-query-params"
 import { blue } from "@material-ui/core/colors"
@@ -25,7 +25,7 @@ const darkTheme = createMuiTheme({
 
 const useStyles = makeStyles((theme) => ({
   root: {
-    display: 'flex',
+    display: "flex",
   },
   menuButton: {
     textTransform: "none",

@@ -18,7 +18,6 @@ const ControlledYouTubePlayer = ({
   const pausedStateRef = useLazyStateRef(paused)
 
   useEffect(() => {
-    console.log({ready,video})
     if (ready) {
       if (video) {
         console.log("Load video", video)

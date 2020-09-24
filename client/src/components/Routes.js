@@ -11,37 +11,36 @@ const routes = [
 ]
 
 const useStyles = makeStyles(() => ({
+  root: {
+    width: "100%",
+    height: "100%",
+    position: "relative",
+  },
   route: {
     position: "absolute",
     top: 0,
     left: 0,
     width: "100%",
     height: "100%",
+    display: "flex",
   },
-  root: {
-    width: "100%",
-    height: "100%",
-    position: "relative",
-  }
 }))
 
 const Routes = () => {
   const classes = useStyles()
 
   return (
-    <div className={classes.root}>
-      {routes.map(({ path, Component, exact }) => (
-        <Route key={path} exact={exact} path={path}>
-          {({ match }) => (
-            <Fade in={match !== null} unmountOnExit timeout={600}>
-              <div className={classes.route}>
-                <Component />
-              </div>
-            </Fade>
-          )}
-        </Route>
-      ))}
-    </div>
+    routes.map(({ path, Component, exact }) => (
+      <Route key={path} exact={exact} path={path}>
+        {({ match }) => (
+          <Fade in={match !== null} unmountOnExit timeout={600}>
+            <div className={classes.route}>
+              <Component />
+            </div>
+          </Fade>
+        )}
+      </Route>
+    ))
   )
 }
 
