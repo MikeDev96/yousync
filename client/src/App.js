@@ -9,14 +9,12 @@ import useDefaultUsername from "./hooks/useDefaultUsername"
 import GlobalStateProvider from "./state/GlobalStateProvider"
 
 const App = () => {
-  const [username] = useDefaultUsername()
-
   return (
     <Router basename={process.env.PUBLIC_URL}>
       <QueryParamProvider ReactRouterRoute={Route} >
         <GlobalStateProvider>
           <Layout>
-            {username && <Routes />}
+            <Routes />
           </Layout>
         </GlobalStateProvider>
       </QueryParamProvider>

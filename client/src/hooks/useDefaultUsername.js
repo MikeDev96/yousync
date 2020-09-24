@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect } from "react"
+import { setUsername } from "../state/actions"
+import useGlobalState from "../state/useGlobalState"
 
 const useDefaultUsername = () => {
-  const [username, setUsername] = useState(() => localStorage.getItem("username"))
+  const { state, dispatch } = useGlobalState()
 
   const getUsername = useCallback(async () => {
     try {
@@ -13,8 +15,7 @@ const useDefaultUsername = () => {
 
       const newUsername = await res.json()
       if (newUsername) {
-        localStorage.setItem("username", newUsername)
-        setUsername(newUsername)
+        dispatch(setUsername(newUsername))
       }
     }
     catch (err) {
@@ -22,20 +23,13 @@ const useDefaultUsername = () => {
     }
   }, [])
 
-  const changeUsername = useCallback(newUsername => {
-    if (newUsername) {
-      localStorage.setItem("username", newUsername)
-      setUsername(newUsername)
-    }
-  }, [])
-
   useEffect(() => {
-    if (!username) {
+    if (!state.persist.username) {
       getUsername()
     }
-  }, [username, getUsername])
+  }, [state.persist.username, getUsername])
 
-  return [username, changeUsername]
+  return state.persist.username
 }
 
 export default useDefaultUsername

@@ -8,6 +8,7 @@ import SettingsDialog from "./SettingsDialog"
 import { useQueryParams, BooleanParam, withDefault } from "use-query-params"
 import { blue } from "@material-ui/core/colors"
 import { Link as RouterLink } from "react-router-dom"
+import useDefaultUsername from "../hooks/useDefaultUsername"
 
 export const APP_NAME = "YouSync"
 
@@ -49,6 +50,7 @@ const Layout = ({
   children,
 }) => {
   const classes = useStyles()
+  const username = useDefaultUsername()
 
   const [query, setQuery] = useQueryParams({
     settings: withDefault(BooleanParam, false),
@@ -56,6 +58,10 @@ const Layout = ({
 
   const handleOpen = useCallback(() => setQuery({ settings: true }), [setQuery])
   const handleClose = useCallback(() => setQuery({ settings: undefined }), [setQuery])
+
+  if (!username) {
+    return null
+  }
 
   return (
     <ThemeProvider theme={darkTheme}>

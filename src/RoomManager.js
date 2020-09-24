@@ -38,10 +38,13 @@ class RoomManager extends EventEmitter {
 
   play() {
     if (this.state.paused) {
-      // this.state.tick = Date.now()
-      this.state.paused = false
-      // this.startEndTimer()
-      this.updateTime()
+      if (this.state.finished) {
+        this.selectVideo(0)
+      }
+      else {
+        this.state.paused = false
+        this.updateTime()
+      }
     }
   }
 
@@ -104,9 +107,7 @@ class RoomManager extends EventEmitter {
   }
 
   selectVideo(videoIndex) {
-    // const itemIndex = this.state.queue.findIndex(item => item.id === videoIndex)
-
-    if (videoIndex in this.state.queue && videoIndex !== this.state.activeItem) {
+    if (videoIndex in this.state.queue) {
       const prevItem = this.state.queue[this.state.activeItem]
 
       if (prevItem) {
@@ -120,14 +121,13 @@ class RoomManager extends EventEmitter {
       this.state = {
         ...this.state,
         paused: false,
-        // tick: Date.now(),
-        // elapsed: 0,
         video: newItem.id,
         activeItem: videoIndex,
         duration: newItem.duration,
       }
-      // this.startEndTimer()
-      this.updateTime(newItem.elapsed)
+
+      const isItemFinished = newItem.elapsed === newItem.duration * 1000
+      this.updateTime(isItemFinished ? 0 : newItem.elapsed)
     }
   }
 
@@ -141,6 +141,7 @@ class RoomManager extends EventEmitter {
 
       if (!this.state.queue[this.state.activeItem + 1]) {
         this.state.finished = true
+        this.state.paused = true
         this.emit("update")
       }
       else {

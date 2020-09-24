@@ -159,9 +159,9 @@ function Room() {
   const [ready, setReady] = useState(false)
   const [playTime, setPlayTime] = useState(0)
   const [newTime, setNewTime] = useState(0)
-  // const [playerState2, setPlayerState2] = useState(-1)
 
-  const [username] = useDefaultUsername()
+  const username = useDefaultUsername()
+  const { state, dispatch } = useGlobalState()
 
   useEffect(() => {
     const callback = () => {
@@ -256,7 +256,7 @@ function Room() {
         console.log("Server:", parseFloat(serverTimeRound.toFixed(2)), "Client:", parseFloat(playTime.toFixed(2)), "Diff:", difference.toFixed(2), "paused", playerStateRef.current.paused, "elapsed", playerState.elapsed)
         setDiff(difference)
 
-        if (differenceAbs > 1) {
+        if (differenceAbs > state.persist.syncThreshold) {
           console.log("Diff", difference, "is more than 1 second, syncing...")
           // playerRef2.current.seekTo(serverTimeRound)
           setNewTime(serverTimeRound)
@@ -267,13 +267,7 @@ function Room() {
 
   const [seek, setSeek] = useState(0)
   const [userSeek, setUserSeek] = useState(-1)
-
-
   const [, setBuffered] = useState(0)
-
-
-  // const [volume, setVolume] = useState(100)
-  // const [volumeBak, setVolumeBak] = useState(volume)
   const [snackbarError, setSnackbarOpen] = useState("")
 
   const handleSnackbarClose = (e, reason) => {
@@ -332,8 +326,6 @@ function Room() {
     }
   }, [])
 
-  const { state, dispatch } = useGlobalState()
-
   return (
     <Fragment>
       <main className={classes.main}>
@@ -379,15 +371,12 @@ function Room() {
               // }}
               classes={{ root: classes.timeSlider, rail: classes.timeSliderRail, track: classes.timeSliderTrack, thumb: classes.timeSliderThumb }}
               value={userSeek >= 0 ? userSeek : seek * 100}
-              onChange={(_e, value) => {
-                // setSeek(value / 100)
-                console.log({ value })
-                setUserSeek(value)
-              }}
+              onChange={(_e, value) => setUserSeek(value)}
               step={0.01}
-              // onMouseDown={() => setSeeking(true)}
-              onMouseUp={() => setUserSeek(-1)}
-              onChangeCommitted={(_e, value) => webSocketRef.current.emit("SEEK", value / 100 * playerState.duration)}
+              onChangeCommitted={(_e, value) => {
+                webSocketRef.current.emit("SEEK", value / 100 * playerState.duration)
+                setUserSeek(-1)
+              }}
             />
             <AppBar component="div" color="secondary" position="static">
               <Toolbar variant="dense">
