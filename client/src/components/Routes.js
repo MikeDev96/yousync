@@ -1,7 +1,7 @@
 import { Fade } from "@material-ui/core"
 import { makeStyles } from "@material-ui/core"
 import React from "react"
-import { Route, Switch } from "react-router-dom"
+import { Route } from "react-router-dom"
 import Home from "./Home"
 import Room from "./Room"
 

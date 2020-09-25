@@ -168,6 +168,11 @@ class RoomManager extends EventEmitter {
     const nextItemIndex = this.state.activeItem + 1
     const nextItem = this.state.queue[nextItemIndex]
 
+    // If it's finished, set it back to 0 so it plays again
+    if (nextItem.elapsed === nextItem.duration * 1000) {
+      nextItem.elapsed = 0
+    }
+
     this.state = {
       ...this.state,
       // tick: Date.now(),
@@ -190,7 +195,9 @@ class RoomManager extends EventEmitter {
       this.syncActiveItem()
     }
 
-    this.startEndTimer()
+    if (!this.state.paused) {
+      this.startEndTimer()
+    }
   }
 
   syncActiveItem() {
