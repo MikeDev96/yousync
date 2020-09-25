@@ -9,7 +9,7 @@ const express = require("express")
 const app = express()
 const http = require("http").createServer(app)
 // const io = require("socket.io")(http, { path: "/yousync/socket.io" })
-const io = require("socket.io")(http)
+const io = require("socket.io")(http, { pingInterval: 5000 })
 
 // const app = express()
 // const server = http.createServer(app)
@@ -80,6 +80,10 @@ io.on("connection", socket => {
 RoomsManager.on("create", room => {
   room.on("update", () => {
     io.to(room.id).emit("STATE", room.state)
+  })
+
+  room.on("time", () => {
+    io.to(room.id).emit("ELAPSED", room.state.elapsed)
   })
 
   room.on("error", err => {

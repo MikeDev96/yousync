@@ -4,10 +4,12 @@ import useLazyStateRef from "../hooks/useLazyStateRef"
 
 const ControlledYouTubePlayer = ({
   video, paused, time, volume,
-  onReady, onProgress,
+  onReady, onProgress, ytPlayerRef,
 }, ref) => {
   const playerRef = useRef()
   const playerRef2 = useRef()
+
+  useImperativeHandle(ytPlayerRef, () => playerRef2.current)
 
   useImperativeHandle(ref, () => playerRef.current)
 

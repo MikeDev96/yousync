@@ -134,26 +134,32 @@ class RoomManager extends EventEmitter {
   startEndTimer() {
     this.stopEndTimer()
     this.state.finished = false
-    this.endHandle = setTimeout(() => {
-      this.endHandle = undefined
-      this.state.elapsed = this.state.duration * 1000
-      this.syncActiveItem()
-
-      if (!this.state.queue[this.state.activeItem + 1]) {
-        this.state.finished = true
-        this.state.paused = true
-        this.emit("update")
+    this.endHandle = setInterval(() => {
+      if (this.state.elapsed >= this.state.duration * 1000) {
+        this.state.elapsed = this.state.duration * 1000
+        this.syncActiveItem()
+  
+        if (!this.state.queue[this.state.activeItem + 1]) {
+          this.state.finished = true
+          this.state.paused = true
+          this.emit("update")
+        }
+        else {
+          this.nextItem()
+          this.emit("update")
+        }
       }
       else {
-        this.nextItem()
-        this.emit("update")
+        this.state.elapsed += 1000
+        this.state.tick = Date.now()
+        this.emit("time")
       }
-    }, this.state.duration * 1000 - this.state.elapsed)
+    }, 1000)
   }
 
   stopEndTimer() {
     if (this.endHandle) {
-      clearTimeout(this.endHandle)
+      clearInterval(this.endHandle)
       this.endHandle = undefined
     }
   }

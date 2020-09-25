@@ -139,9 +139,6 @@ function Room() {
 
   const classes = useStyles()
 
-  const playerRef = useRef()
-  const webSocketRef = useRef()
-
   const [playerState, setPlayerState] = useState({
     paused: true,
     tick: 0,
@@ -154,27 +151,39 @@ function Room() {
   })
 
   const [clientsState, setClientsState] = useState([])
-
-  const [serverTime, setServerTime] = useState(0)
   const [ready, setReady] = useState(false)
   const [playTime, setPlayTime] = useState(0)
   const [newTime, setNewTime] = useState(0)
+  const [ping, setPing] = useState(-1)
+  const [diff, setDiff] = useState(0)
+  const [seek, setSeek] = useState(0)
+  const [userSeek, setUserSeek] = useState(-1)
+  const [, setBuffered] = useState(0)
+  const [snackbarError, setSnackbarOpen] = useState("")
+  const [playerBounds, setPlayerBounds] = useState([0, 0, 0])
+
+  const playerRef = useRef()
+  const webSocketRef = useRef()
+  const ytPlayerRef = useRef()
+  const playerContainerRef = useRef()
+  const chinContainerRef = useRef()
+
+  const playerStateRef = useLazyStateRef(playerState)
+  const prevClientsState = usePrevious(clientsState)
 
   const username = useDefaultUsername()
   const { state, dispatch } = useGlobalState()
 
-  useEffect(() => {
-    const callback = () => {
-      setServerTime(playerState.paused ? playerState.elapsed : playerState.elapsed + (Date.now() - playerState.tick))
+  const play = useCallback(() => webSocketRef.current.emit("PLAY"), [])
+  const pause = useCallback(() => webSocketRef.current.emit("PAUSE"), [])
+
+  const handleSnackbarClose = (e, reason) => {
+    if (reason === "clickaway") {
+      return
     }
 
-    const handle = setInterval(callback, 1000)
-    callback()
-
-    return () => {
-      clearInterval(handle)
-    }
-  }, [playerState.elapsed, playerState.paused, playerState.tick])
+    setSnackbarOpen("")
+  }
 
   useEffect(() => {
     const socketOptions = {
@@ -211,74 +220,43 @@ function Room() {
       }
     })
 
-    socket.on("STATE", data => {
-      console.log(data)
-      setPlayerState(data)
-    })
-
     socket.on("INITIAL_STATE", data => {
-      console.log(data)
       setPlayerState(data.player)
       setClientsState(data.clients)
     })
 
-    socket.on("CLIENTS_STATE", data => {
-      setClientsState(data)
-    })
+    socket.on("STATE", data => setPlayerState(data))
+    socket.on("ELAPSED", ms => setPlayerState(ps => ({ ...ps, elapsed: ms })))
+    socket.on("CLIENTS_STATE", data => setClientsState(data))
+    socket.on("ERROR", err => setSnackbarOpen(err))
 
-    socket.on("ERROR", err => {
-      setSnackbarOpen(err)
-    })
-
-    socket.on("disconnect", () => {
-      // history.replace("/")
-    })
+    socket.on("pong", ms => setPing(ms))
+    socket.on("disconnect", () => history.replace("/"))
 
     return () => {
       socket.disconnect()
     }
   }, [history, roomId, username])
 
-  const play = useCallback(() => webSocketRef.current.emit("PLAY"), [])
-  const pause = useCallback(() => webSocketRef.current.emit("PAUSE"), [])
-
-  const playerStateRef = useLazyStateRef(playerState)
-  const [diff, setDiff] = useState(0)
-
   useEffect(() => {
     if (ready) {
       if (playerStateRef.current.video) {
-        const serverTime = playerStateRef.current.paused ? playerState.elapsed : playerState.elapsed + (Date.now() - playerState.tick)
+        const serverTime = playerState.elapsed
         const serverTimeRound = serverTime / 1000
-        const difference = playTime - serverTimeRound
-        const differenceAbs = Math.abs(playTime - serverTimeRound)
+        const livePlayTime = ytPlayerRef.current.getCurrentTime() || 0
+        const difference = livePlayTime - serverTimeRound
+        const differenceAbs = Math.abs(livePlayTime - serverTimeRound)
 
-        console.log("Server:", parseFloat(serverTimeRound.toFixed(2)), "Client:", parseFloat(playTime.toFixed(2)), "Diff:", difference.toFixed(2), "paused", playerStateRef.current.paused, "elapsed", playerState.elapsed)
+        console.log("Server:", parseFloat(serverTimeRound.toFixed(2)), "Client:", parseFloat(livePlayTime.toFixed(2)), "Diff:", difference.toFixed(2), "paused", playerStateRef.current.paused, "elapsed", playerState.elapsed)
         setDiff(difference)
 
         if (differenceAbs > state.persist.syncThreshold) {
           console.log("Diff", difference, "is more than 1 second, syncing...")
-          // playerRef2.current.seekTo(serverTimeRound)
           setNewTime(serverTimeRound)
         }
       }
     }
-  }, [playTime, playerState.elapsed, playerState.tick, playerStateRef, ready, state.persist.syncThreshold])
-
-  const [seek, setSeek] = useState(0)
-  const [userSeek, setUserSeek] = useState(-1)
-  const [, setBuffered] = useState(0)
-  const [snackbarError, setSnackbarOpen] = useState("")
-
-  const handleSnackbarClose = (e, reason) => {
-    if (reason === "clickaway") {
-      return
-    }
-
-    setSnackbarOpen("")
-  }
-
-  const prevClientsState = usePrevious(clientsState)
+  }, [playerState.elapsed, playerStateRef, ready, state.persist.syncThreshold])
 
   useEffect(() => {
     let sound = ""
@@ -297,11 +275,6 @@ function Room() {
       audio.play()
     }
   }, [clientsState.length, prevClientsState.length])
-
-  const playerContainerRef = useRef()
-  const chinContainerRef = useRef()
-
-  const [playerBounds, setPlayerBounds] = useState([0, 0, 0])
 
   useEffect(() => {
     const ro = new ResizeObserver(entries => {
@@ -341,6 +314,7 @@ function Room() {
         <div ref={playerContainerRef} className={classes.playerContainer}>
           <div style={{ width: playerBounds[0], height: playerBounds[1], marginLeft: playerBounds[2] }}>
             <ControlledYouTubePlayer
+              ytPlayerRef={ytPlayerRef}
               ref={playerRef}
               video={playerState.video}
               duration={playerState.duration}
@@ -388,8 +362,8 @@ function Room() {
                 </IconButton>
                 <Slider className={classes.sliderRoot} value={state.persist.muted ? 0 : state.persist.volume} onChange={(_e, value) => dispatch(setVolume(value))} />
                 <Typography className={classes.timePlayed}>{sToTimestamp(playTime)} / {sToTimestamp(playerState.duration)}</Typography>
-                <Tooltip title="This is how far behind or ahead you are of the server">
-                  <Chip color="primary" size="small" label={`${diff > 0 ? "+" : ""}${diff.toFixed(2)}s`} />
+                <Tooltip title="This is how many seconds behind or ahead of the server you are & your latency">
+                  <Chip color="primary" size="small" label={`${diff > 0 ? "+" : ""}${diff.toFixed(2)}s / ${ping}ms`} />
                 </Tooltip>
                 <Typography className={classes.syncDiff} />
                 <AvatarGroup className={classes.avatars} max={15}>
@@ -420,14 +394,20 @@ function Room() {
         onVideoAdd={url => webSocketRef.current.emit("VIDEO", url)}
         onVideoClick={videoIndex => webSocketRef.current.emit("SELECT_VIDEO", videoIndex)}
         activeVideo={playerState.activeItem}
-        playTime={serverTime / 1000}
+        playTime={playerState.elapsed / 1000}
       />
     </Fragment>
   );
 }
 
 const sToTimestamp = s => {
-  return `${Math.floor(s / 60).toString().padStart(2, "0")}:${Math.floor(s % 60).toString().padStart(2, "0")}`
+  const hours = Math.floor(s / 3600)
+  const minutes = Math.floor(s % 3600 / 60)
+  const seconds = Math.floor(s % 3600 % 60)
+
+  const hoursStr = hours > 0 ? `${hours.toString().padStart(2, "0")}:` : ""
+
+  return `${hoursStr}${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
 }
 
 

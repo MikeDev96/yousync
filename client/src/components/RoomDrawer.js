@@ -8,7 +8,6 @@ import Divider from '@material-ui/core/Divider';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import { Avatar, Card, CardActionArea, CardContent, CardMedia, InputBase, LinearProgress, ListItemAvatar, ListSubheader, Slide, Tooltip } from '@material-ui/core';
-import PlayCircleOutlineIcon from '@material-ui/icons/PlayCircleOutline';
 import LinkIcon from '@material-ui/icons/Link';
 import clsx from "clsx"
 
@@ -125,6 +124,12 @@ const useStyles = makeStyles((theme) => ({
   progressBar: {
     backgroundColor: "red",
   },
+  userAvatar: {
+    width: theme.spacing(4),
+    height: theme.spacing(4),
+    backgroundColor: theme.palette.primary.main,
+    color: theme.palette.text.primary,
+  },
 }));
 
 const RoomDrawer = ({
@@ -132,8 +137,6 @@ const RoomDrawer = ({
   activeVideo, playTime,
 }) => {
   const classes = useStyles();
-
-  // const test = useContext(GlobalContext)
 
   const map = new Map()
   const queueSafeDupes = queue.reduce((acc, cur) => {
@@ -167,8 +170,8 @@ const RoomDrawer = ({
               {clients.map(client => (
                 <Slide key={client.id} in direction="left">
                 <ListItem button>
-                  <ListItemAvatar style={{ minWidth: 32, display: "flex" }}>
-                    <PlayCircleOutlineIcon style={{ width: 16 }} />
+                  <ListItemAvatar style={{ minWidth: 40 }}>
+                    <Avatar className={classes.userAvatar}>{client.username[0]}</Avatar>
                   </ListItemAvatar>
                   <ListItemText primary={client.username} />
                 </ListItem>
