@@ -231,7 +231,7 @@ function Room() {
     socket.on("ERROR", err => setSnackbarOpen(err))
 
     socket.on("pong", ms => setPing(ms))
-    socket.on("disconnect", () => history.replace("/"))
+    // socket.on("disconnect", () => history.replace("/"))
 
     return () => {
       socket.disconnect()
