@@ -1,6 +1,7 @@
-const ytdl = require("ytdl-core")
 const { EventEmitter } = require("events")
-const { json } = require("express")
+const axios = require("axios")
+const qs = require("query-string")
+const fs = require("fs")
 
 class RoomManager extends EventEmitter {
   constructor(id) {
@@ -10,6 +11,7 @@ class RoomManager extends EventEmitter {
     this.clients = []
     this.state = {
       paused: true,
+      pauser: "",
       tick: 0,
       elapsed: 0,
       video: "",
@@ -43,15 +45,17 @@ class RoomManager extends EventEmitter {
       }
       else {
         this.state.paused = false
+        // this.state.pauser = ""
         this.updateTime()
       }
     }
   }
 
-  pause() {
+  pause(username) {
     if (!this.state.paused) {
       this.state.elapsed += Date.now() - this.state.tick
       this.state.paused = true
+      this.state.pauser = username
       this.syncActiveItem()
       this.stopEndTimer()
     }
@@ -66,39 +70,39 @@ class RoomManager extends EventEmitter {
 
   async addVideo(videoId, addedBy) {
     try {
-      const res = await ytdl.getBasicInfo(videoId)
-      this.state = {
-        // paused: false,
-        // tick: Date.now(),
-        // elapsed: 0,
-        // video: "",
-        // duration: 0,
-        // queue: [],
-        // activeItem: -1,
+      const videoInfo = await axios(`https://www.youtube.com/get_video_info?video_id=${videoId}`)
+      if (videoInfo && videoInfo.data) {
+        const decodedVideoData = decodeURI(videoInfo.data)
+        const queryParams = qs.parse(decodedVideoData)
+        if (queryParams && queryParams.player_response) {
+          const playerResponse = JSON.parse(queryParams.player_response)
+          const thumbails = playerResponse.videoDetails.thumbnail.thumbnails
+          // Get the 2nd best quality thumbnail
+          const thumbnail = thumbails[thumbails.length > 1 ? thumbails.length - 2 : 0]
 
-        // video: res.videoDetails.videoId,
-        ...this.state,
-        queue: [
-          ...this.state.queue,
-          {
-            id: res.videoDetails.videoId,
-            title: res.videoDetails.title,
-            author: res.videoDetails.author.name,
-            thumbnail: res.videoDetails.thumbnail.thumbnails[0].url,
-            duration: parseInt(res.videoDetails.lengthSeconds),
-            addedBy,
-            elapsed: 0,
-          },
-        ],
-        // activeItem: this.state.queue.length,
-        // duration: parseInt(res.videoDetails.lengthSeconds),
+          this.state = {
+            ...this.state,
+            queue: [
+              ...this.state.queue,
+              {
+                id: playerResponse.videoDetails.videoId,
+                title: playerResponse.videoDetails.title,
+                author: playerResponse.videoDetails.author,
+                thumbnail: thumbnail.url,
+                duration: parseInt(playerResponse.videoDetails.lengthSeconds),
+                addedBy,
+                elapsed: 0,
+              },
+            ],
+          }
+
+          if (this.state.activeItem < 0 || this.state.finished) {
+            this.nextItem()
+          }
+
+          this.emit("update")
+        }
       }
-
-      if (this.state.activeItem < 0 || this.state.finished) {
-        this.nextItem()
-      }
-
-      this.emit("update")
     }
     catch (err) {
       console.log(err)
@@ -121,6 +125,7 @@ class RoomManager extends EventEmitter {
       this.state = {
         ...this.state,
         paused: false,
+        // pauser: "",
         video: newItem.id,
         activeItem: videoIndex,
         duration: newItem.duration,
@@ -142,6 +147,7 @@ class RoomManager extends EventEmitter {
         if (!this.state.queue[this.state.activeItem + 1]) {
           this.state.finished = true
           this.state.paused = true
+          this.state.pauser = ""
           this.emit("update")
         }
         else {
@@ -181,6 +187,7 @@ class RoomManager extends EventEmitter {
       activeItem: nextItemIndex,
       duration: nextItem.duration,
       paused: false,
+      // pauser: "",
     }
 
     // this.startEndTimer()

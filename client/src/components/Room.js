@@ -141,6 +141,7 @@ function Room() {
 
   const [playerState, setPlayerState] = useState({
     paused: true,
+    pauser: "",
     tick: 0,
     elapsed: 0,
     video: "",
@@ -161,6 +162,7 @@ function Room() {
   const [, setBuffered] = useState(0)
   const [snackbarError, setSnackbarOpen] = useState("")
   const [playerBounds, setPlayerBounds] = useState([0, 0, 0])
+  const [init, setInit] = useState(false)
 
   const playerRef = useRef()
   const webSocketRef = useRef()
@@ -173,6 +175,8 @@ function Room() {
 
   const username = useDefaultUsername()
   const { state, dispatch } = useGlobalState()
+
+  const someVideos = !!playerState.queue.length
 
   const play = useCallback(() => webSocketRef.current.emit("PLAY"), [])
   const pause = useCallback(() => webSocketRef.current.emit("PAUSE"), [])
@@ -223,6 +227,7 @@ function Room() {
     socket.on("INITIAL_STATE", data => {
       setPlayerState(data.player)
       setClientsState(data.clients)
+      setInit(true)
     })
 
     socket.on("STATE", data => setPlayerState(data))
@@ -312,7 +317,18 @@ function Room() {
           {playerState.activeItem >= 0 && <Typography variant="subtitle1" color="textSecondary" gutterBottom>{playerState.queue[playerState.activeItem].author}</Typography>}
         </div>
         <div ref={playerContainerRef} className={classes.playerContainer}>
-          <div style={{ width: playerBounds[0], height: playerBounds[1], marginLeft: playerBounds[2] }}>
+          <div style={{ width: playerBounds[0], height: playerBounds[1], marginLeft: playerBounds[2], position: "relative" }}>
+            <Grow in={init && (!someVideos || (playerState.paused && !playerState.finished))}>
+              <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,.8)", borderRadius: 8, padding: 16, }}>
+                  {!someVideos || !playerState.pauser ? <div style={{ fontSize: "12em" }}>{"😎"}</div> : <PauseIcon style={{ fontSize: "16em" }} />}
+                  <Typography variant="h4" style={{ padding: "8px 16px", maxWidth: 600, whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>
+                    {!someVideos || !playerState.pauser ? "Welcome to YouSync" : `Paused by ${playerState.pauser}`}
+                  </Typography>
+                  {(!someVideos || !playerState.pauser) && <Typography variant="subtitle1" color="textSecondary">{"Created by Mike"}</Typography>}
+                </div>
+              </div>
+            </Grow>
             <ControlledYouTubePlayer
               ytPlayerRef={ytPlayerRef}
               ref={playerRef}

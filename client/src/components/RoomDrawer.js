@@ -9,6 +9,7 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import { Avatar, Card, CardActionArea, CardContent, CardMedia, InputBase, LinearProgress, ListItemAvatar, ListSubheader, Slide, Tooltip } from '@material-ui/core';
 import LinkIcon from '@material-ui/icons/Link';
+import YouTubeIcon from '@material-ui/icons/YouTube';
 import clsx from "clsx"
 
 const drawerWidth = 240;
@@ -62,6 +63,16 @@ const useStyles = makeStyles((theme) => ({
     margin: theme.spacing(1),
     backgroundColor: theme.palette.primary.main,
     color: theme.palette.text.primary,
+  },
+  cardPlaceholder: {
+    display: "flex",
+    background: "black",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cardPlaceholderIcon: {
+    color:"red",
+    fontSize: "4em",
   },
   search: {
     position: 'relative',
@@ -197,8 +208,12 @@ const RoomDrawer = ({
                     inputProps={{ 'aria-label': 'search' }}
                     onKeyPress={e => {
                       if (e.key === "Enter") {
-                        onVideoAdd(e.target.value)
-                        e.target.value = ""
+                        const match = /(?:https?:\/\/www.)?youtu(?:be.com\/watch\?v=|.be\/)([\w-]+)/.exec(e.target.value)
+                        if (match) {
+                          const [, videoId] = match
+                          onVideoAdd(videoId)
+                          e.target.value = ""
+                        }
                       }
                     }}
                   />
@@ -235,6 +250,20 @@ const RoomDrawer = ({
                   </ListItem>
                 </Slide>
               )}
+              {!queueSafeDupes.length &&
+                <ListItem>
+                  <Card className={classes.root}>
+                    <CardActionArea>
+                      <CardMedia className={clsx(classes.cardImage, classes.cardPlaceholder)}>
+                        <YouTubeIcon className={classes.cardPlaceholderIcon} />
+                      </CardMedia>
+                      <CardContent className={classes.cardContent}>
+                        <Typography variant="body2" component="p" align="center">{"Added videos appear here"}</Typography>
+                      </CardContent>
+                    </CardActionArea>
+                  </Card>
+                </ListItem>
+              }
             </ul>
           </li>
         </List>

@@ -17,7 +17,7 @@ const ControlledYouTubePlayer = ({
   const [playerState, setPlayerState] = useState(-1)
 
   const videoStateRef = useLazyStateRef(video)
-  const pausedStateRef = useLazyStateRef(paused)
+  // const pausedStateRef = useLazyStateRef(paused)
 
   useEffect(() => {
     if (ready) {
@@ -30,14 +30,29 @@ const ControlledYouTubePlayer = ({
     }
   }, [video, ready])
 
+  /*
+    There was a bug when a video had finished playing,
+    and then it was selected in the queue to play again,
+    the server would start playing it but the client's player
+    would still be paused causing a powerpoint effect.
+    This was caused by the player being played before it was
+    seeked back to the start and because the player was already
+    at the end of the video, it immediately paused itself. By
+    adding the dependancy on [paused] it will cause it to fire
+    again once the [newTime] state has updated in Room.js
+
+    This isn't good enough, the video now skips whenever its paused
+    but my brain is fried, rethink tomorrow :)
+  */
   useEffect(() => {
     if (ready) {
       // if (videoStateRef.current && !pausedStateRef.current) {
       if (videoStateRef.current) {
+        // console.log(`Seek to ${time}`)
         playerRef2.current.seekTo(time)
       }
     }
-  }, [pausedStateRef, ready, time, videoStateRef])
+  }, [/*paused,*/ ready, time, videoStateRef])
 
   useEffect(() => {
     if (ready) {

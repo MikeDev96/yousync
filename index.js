@@ -47,7 +47,7 @@ io.on("connection", socket => {
   })
   
   socket.on("PAUSE", () => {
-    room.pause()
+    room.pause(username)
     io.to(roomId).emit("STATE", room.state)
   })
 
