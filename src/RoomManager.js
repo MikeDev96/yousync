@@ -76,33 +76,44 @@ class RoomManager extends EventEmitter {
         const queryParams = qs.parse(decodedVideoData)
         if (queryParams && queryParams.player_response) {
           const playerResponse = JSON.parse(queryParams.player_response)
-          const thumbails = playerResponse.videoDetails.thumbnail.thumbnails
-          // Get the 2nd best quality thumbnail
-          const thumbnail = thumbails[thumbails.length > 1 ? thumbails.length - 2 : 0]
-
-          this.state = {
-            ...this.state,
-            queue: [
-              ...this.state.queue,
-              {
-                id: playerResponse.videoDetails.videoId,
-                title: playerResponse.videoDetails.title,
-                author: playerResponse.videoDetails.author,
-                thumbnail: thumbnail.url,
-                duration: parseInt(playerResponse.videoDetails.lengthSeconds),
-                addedBy,
-                elapsed: 0,
-              },
-            ],
+          if (playerResponse.playabilityStatus) {
+            if (playerResponse.playabilityStatus.status === "OK") {
+              const thumbails = playerResponse.videoDetails.thumbnail.thumbnails
+              // Get the 2nd best quality thumbnail
+              const thumbnail = thumbails[thumbails.length > 1 ? thumbails.length - 2 : 0]
+    
+              this.state = {
+                ...this.state,
+                queue: [
+                  ...this.state.queue,
+                  {
+                    id: playerResponse.videoDetails.videoId,
+                    title: playerResponse.videoDetails.title,
+                    author: playerResponse.videoDetails.author,
+                    thumbnail: thumbnail.url,
+                    duration: parseInt(playerResponse.videoDetails.lengthSeconds),
+                    addedBy,
+                    elapsed: 0,
+                  },
+                ],
+              }
+    
+              if (this.state.activeItem < 0 || this.state.finished) {
+                this.nextItem()
+              }
+    
+              this.emit("update")
+              return
+            }
+            else {
+              this.emit("error", playerResponse.playabilityStatus.reason)
+              return
+            }
           }
-
-          if (this.state.activeItem < 0 || this.state.finished) {
-            this.nextItem()
-          }
-
-          this.emit("update")
         }
       }
+
+      this.emit("error", "Failed to get player response")
     }
     catch (err) {
       console.log(err)
