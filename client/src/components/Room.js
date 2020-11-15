@@ -2,16 +2,9 @@ import React, { useRef, useEffect, useCallback, useState, Fragment } from "react
 import "../App.css";
 import useLazyStateRef from "../hooks/useLazyStateRef";
 import ControlledYouTubePlayer from "./ControlledYouTubePlayer";
-import { makeStyles, Typography, AppBar, Toolbar, IconButton, Chip, Tooltip, Slider, Avatar, Grow, Snackbar } from "@material-ui/core";
-import AvatarGroup from "@material-ui/lab/AvatarGroup"
-import 'fontsource-roboto';
-import PlayArrowIcon from '@material-ui/icons/PlayArrow';
-import PauseIcon from '@material-ui/icons/Pause';
-import FullscreenIcon from '@material-ui/icons/Fullscreen';
-import VolumeDown from '@material-ui/icons/VolumeDown';
-import VolumeUp from '@material-ui/icons/VolumeUp';
-import VolumeMuteIcon from '@material-ui/icons/VolumeMute';
-import ReplayIcon from '@material-ui/icons/Replay';
+import { makeStyles, Typography, Toolbar, Grow, Snackbar } from "@material-ui/core";
+import "fontsource-roboto";
+import PauseIcon from "@material-ui/icons/Pause";
 import { useParams, useHistory } from "react-router-dom";
 import io from "socket.io-client"
 import Alert from "@material-ui/lab/Alert"
@@ -19,7 +12,6 @@ import useDefaultUsername from "../hooks/useDefaultUsername";
 import RoomDrawer from "./RoomDrawer";
 import usePrevious from "../hooks/usePrevious";
 import useGlobalState from "../state/useGlobalState";
-import { setVolume, toggleMute } from "../state/actions";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -60,7 +52,7 @@ const useStyles = makeStyles((theme) => ({
     color: "white",
     height: 4,
     padding: 0,
-    '&:focus > .MuiSlider-thumb, &:hover > .MuiSlider-thumb, &$active': {
+    "&:focus > .MuiSlider-thumb, &:hover > .MuiSlider-thumb, &$active": {
       display: "initial",
     },
     // Makes the scrubber easier to grab
@@ -153,13 +145,8 @@ function Room() {
 
   const [clientsState, setClientsState] = useState([])
   const [ready, setReady] = useState(false)
-  const [playTime, setPlayTime] = useState(0)
   const [newTime, setNewTime] = useState(0)
-  const [ping, setPing] = useState(-1)
   const [diff, setDiff] = useState(0)
-  const [seek, setSeek] = useState(0)
-  const [userSeek, setUserSeek] = useState(-1)
-  const [, setBuffered] = useState(0)
   const [snackbarError, setSnackbarOpen] = useState("")
   const [playerBounds, setPlayerBounds] = useState([0, 0, 0])
   const [init, setInit] = useState(false)
@@ -168,13 +155,13 @@ function Room() {
   const webSocketRef = useRef()
   const ytPlayerRef = useRef()
   const playerContainerRef = useRef()
-  const chinContainerRef = useRef()
 
   const playerStateRef = useLazyStateRef(playerState)
   const prevClientsState = usePrevious(clientsState)
+  const diffRef = useLazyStateRef(diff)
 
   const username = useDefaultUsername()
-  const { state, dispatch } = useGlobalState()
+  const { state } = useGlobalState()
 
   const someVideos = !!playerState.queue.length
 
@@ -233,15 +220,29 @@ function Room() {
     socket.on("STATE", data => setPlayerState(data))
     socket.on("ELAPSED", ms => setPlayerState(ps => ({ ...ps, elapsed: ms })))
     socket.on("CLIENTS_STATE", data => setClientsState(data))
+    socket.on("CLIENT", newClient => {
+      setClientsState(cs => {
+        const clientIndex = cs.findIndex(c => c.id === newClient.id)
+        if (clientIndex >= 0) {
+          const newClientsState = [...cs]
+          newClientsState[clientIndex] = newClient
+          return newClientsState
+        }
+
+        return cs
+      })
+    })
     socket.on("ERROR", err => setSnackbarOpen(err))
 
-    socket.on("pong", ms => setPing(ms))
+    socket.on("pong", ms => {
+      webSocketRef.current.emit("PING", ms, diffRef.current.toFixed(2))
+    })
     // socket.on("disconnect", () => history.replace("/"))
 
     return () => {
       socket.disconnect()
     }
-  }, [history, roomId, username])
+  }, [history, roomId, username, diffRef])
 
   useEffect(() => {
     if (ready) {
@@ -284,7 +285,7 @@ function Room() {
   useEffect(() => {
     const ro = new ResizeObserver(entries => {
       const containerWidth = entries[0].contentRect.width
-      const iframeHeight = Math.ceil(entries[0].contentRect.height - chinContainerRef.current.clientHeight)
+      const iframeHeight = Math.ceil(entries[0].contentRect.height - 0)
       const iframeWidth = Math.floor(iframeHeight * (16 / 9))
 
       if (iframeWidth > containerWidth) {
@@ -339,63 +340,10 @@ function Room() {
               onReady={useCallback(() => {
                 setReady(true)
               }, [])}
-              onProgress={useCallback((playTime, duration, buffered) => {
-                setPlayTime(playTime)
-                setSeek(playTime / duration)
-                setBuffered(buffered)
-              }, [])}
-              volume={state.persist.muted ? 0 : state.persist.volume}
+              onPause={pause}
+              onPlay={play}
+              onSeek={useCallback(seconds => webSocketRef.current.emit("SEEK", seconds), [])}
             />
-          </div>
-          <div ref={chinContainerRef} className={classes.chinContainer} style={{ width: playerBounds[0], marginLeft: playerBounds[2] }}>
-            <Slider
-              // ThumbComponent={props => {
-              //   if (userSeek >= 0) {
-              //     return <Tooltip arrow placement="top" title={sToTimestamp(userSeek / 100 * playerState.duration)} open TransitionProps={{ timeout: 0 }}>
-              //       <span {...props} />
-              //     </Tooltip>
-              //   }
-              //   else {
-              //     return <span {...props} />
-              //   }
-              // }}
-              classes={{ root: classes.timeSlider, rail: classes.timeSliderRail, track: classes.timeSliderTrack, thumb: classes.timeSliderThumb }}
-              value={userSeek >= 0 ? userSeek : seek * 100}
-              onChange={(_e, value) => setUserSeek(value)}
-              step={0.01}
-              onChangeCommitted={(_e, value) => {
-                webSocketRef.current.emit("SEEK", value / 100 * playerState.duration)
-                setUserSeek(-1)
-              }}
-            />
-            <AppBar component="div" color="secondary" position="static">
-              <Toolbar variant="dense">
-                <IconButton edge="start" className={classes.menuButton} color="inherit" aria-label="menu" onClick={playerState.paused ? play : pause}>
-                  {playerState.finished ? <ReplayIcon /> : playerState.paused ? <PlayArrowIcon /> : <PauseIcon />}
-                </IconButton>
-                <IconButton className={classes.volumeButton} color="inherit" aria-label="menu" onClick={() => dispatch(toggleMute())}>
-                  {state.persist.volume === 0 || state.persist.muted ? <VolumeMuteIcon /> : state.persist.volume < 50 ? <VolumeDown /> : <VolumeUp />}
-                </IconButton>
-                <Slider className={classes.sliderRoot} value={state.persist.muted ? 0 : state.persist.volume} onChange={(_e, value) => dispatch(setVolume(value))} />
-                <Typography className={classes.timePlayed}>{sToTimestamp(playTime)} / {sToTimestamp(playerState.duration)}</Typography>
-                <Tooltip title="This is how many seconds behind or ahead of the server you are & your latency">
-                  <Chip color="primary" size="small" label={`${diff > 0 ? "+" : ""}${diff.toFixed(2)}s / ${ping}ms`} />
-                </Tooltip>
-                <Typography className={classes.syncDiff} />
-                <AvatarGroup className={classes.avatars} max={15}>
-                  {clientsState.map(client =>
-                    <Grow key={client.id} in timeout={600}>
-                      <Tooltip title={client.username}>
-                        <Avatar className={classes.avatar}>{client.username[0].toUpperCase()}</Avatar>
-                      </Tooltip>
-                    </Grow>
-                  )}
-                </AvatarGroup>
-                <IconButton edge="end" color="inherit" aria-label="menu" onClick={() => playerRef.current.requestFullscreen()}>
-                  <FullscreenIcon />
-                </IconButton>
-              </Toolbar>
-            </AppBar>
           </div>
         </div>
         <Snackbar open={!!snackbarError} autoHideDuration={6000} onClose={handleSnackbarClose}>
@@ -415,16 +363,5 @@ function Room() {
     </Fragment>
   );
 }
-
-const sToTimestamp = s => {
-  const hours = Math.floor(s / 3600)
-  const minutes = Math.floor(s % 3600 / 60)
-  const seconds = Math.floor(s % 3600 % 60)
-
-  const hoursStr = hours > 0 ? `${hours.toString().padStart(2, "0")}:` : ""
-
-  return `${hoursStr}${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
-}
-
 
 export default Room

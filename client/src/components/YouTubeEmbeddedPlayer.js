@@ -32,9 +32,6 @@ const YouTubeEmbeddedPlayer = ({
         height: "100%",
         // videoId: "bScsFi6DaoM",
         playerVars: {
-          controls: 0,
-          disablekb: 1,
-          fs: 0,
           modestbranding: 1,
           playsinline: 1,//t
           // mute: 1,

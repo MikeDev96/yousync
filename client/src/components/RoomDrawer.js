@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import { fade, makeStyles } from '@material-ui/core/styles';
 import Drawer from '@material-ui/core/Drawer';
 import Toolbar from '@material-ui/core/Toolbar';
@@ -71,7 +71,7 @@ const useStyles = makeStyles((theme) => ({
     alignItems: "center",
   },
   cardPlaceholderIcon: {
-    color:"red",
+    color: "red",
     fontSize: "4em",
   },
   search: {
@@ -141,6 +141,18 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.palette.primary.main,
     color: theme.palette.text.primary,
   },
+  usernameContainer: {
+    display: "flex",
+  },
+  username: {
+    flexGrow: 1,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  ping: {
+    marginLeft: theme.spacing(1),
+  }
 }));
 
 const RoomDrawer = ({
@@ -180,12 +192,20 @@ const RoomDrawer = ({
               <ListSubheader>{"Users"}</ListSubheader>
               {clients.map(client => (
                 <Slide key={client.id} in direction="left">
-                <ListItem button>
-                  <ListItemAvatar style={{ minWidth: 40 }}>
-                    <Avatar className={classes.userAvatar}>{client.username[0]}</Avatar>
-                  </ListItemAvatar>
-                  <ListItemText primary={client.username} />
-                </ListItem>
+                  <ListItem button>
+                    <ListItemAvatar style={{ minWidth: 40 }}>
+                      <Avatar className={classes.userAvatar}>{client.username[0]}</Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      classes={{ primary: classes.usernameContainer }}
+                      primary={
+                        <Fragment>
+                          <span className={classes.username}>{client.username}</span>
+                          <span className={classes.ping}>{client.syncDiff}s / {client.ping}ms</span>
+                        </Fragment>
+                      }
+                    />
+                  </ListItem>
                 </Slide>
               ))}
             </ul>
@@ -238,10 +258,8 @@ const RoomDrawer = ({
                             <Avatar className={classes.cardAvatar}>{item.addedBy.slice(0, 1)}</Avatar>
                           </Tooltip>
                         </CardMedia>
-                        {/* selected={itemIndex === activeVideo} */}
                         <LinearProgress classes={{ bar: classes.progressBar, root: classes.progressRoot }} variant="determinate" value={(itemIndex === activeVideo ? playTime : (item.elapsed / 1000)) / item.duration * 100} />
                         <CardContent className={clsx(classes.cardContent, { selected: itemIndex === activeVideo })}>
-                          {/* <Typography gutterBottom variant="h5" component="h2">{item.title}</Typography> */}
                           <Typography variant="body2" component="p">{item.title}</Typography>
                           <Typography variant="body2" component="p" color="textSecondary">{item.author}</Typography>
                         </CardContent>

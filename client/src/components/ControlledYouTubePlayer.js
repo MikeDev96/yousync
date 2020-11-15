@@ -3,21 +3,21 @@ import YouTubeEmbeddedPlayer from "./YouTubeEmbeddedPlayer"
 import useLazyStateRef from "../hooks/useLazyStateRef"
 
 const ControlledYouTubePlayer = ({
-  video, paused, time, volume,
-  onReady, onProgress, ytPlayerRef,
+  video, paused, time, onReady,
+  ytPlayerRef, onPause, onPlay, onSeek,
 }, ref) => {
   const playerRef = useRef()
   const playerRef2 = useRef()
+  const pauseTick = useRef(0)
+  const bufferingTick = useRef(0)
+  const seekHandle = useRef()
 
   useImperativeHandle(ytPlayerRef, () => playerRef2.current)
-
   useImperativeHandle(ref, () => playerRef.current)
 
   const [ready, setReady] = useState(false)
-  const [playerState, setPlayerState] = useState(-1)
 
   const videoStateRef = useLazyStateRef(video)
-  // const pausedStateRef = useLazyStateRef(paused)
 
   useEffect(() => {
     if (ready) {
@@ -67,32 +67,6 @@ const ControlledYouTubePlayer = ({
     }
   }, [paused, ready, video])
 
-  useEffect(() => {
-    if (ready) {
-      const callback = () => {
-        const playTime = playerRef2.current.getCurrentTime() || 0
-        const duration = playerRef2.current.getDuration() || 0
-        const buffered = playerRef2.current.getVideoLoadedFraction() || 0
-        onProgress(playTime, duration, buffered)
-      }
-
-      callback()
-      const handle = setInterval(callback, 1000)
-
-      return () => {
-        clearInterval(handle)
-      }
-    }
-    // [playerState] in dependency array improves responsiveness
-    // when seeking
-  }, [onProgress, ready, playerState])
-
-  useEffect(() => {
-    if (ready) {
-      playerRef2.current.setVolume(volume)
-    }
-  }, [volume, ready])
-
   return (
     <YouTubeEmbeddedPlayer
       ref={playerRef}
@@ -103,9 +77,32 @@ const ControlledYouTubePlayer = ({
         onReady()
       }, [onReady])}
       onStateChange={useCallback(e => {
-        // console.log(e.data)
-        setPlayerState(e.data)
-      }, [])}
+        console.log(e.data)
+        if (e.data === 1) {
+          onPlay()
+        }
+        else if (e.data === 2) {
+          const curTime = playerRef2.current.getCurrentTime() || 0
+
+          pauseTick.current = Date.now()
+          seekHandle.current = setTimeout(() => {
+            onPause()
+            playerRef2.current.seekTo(curTime + 0.3)
+          }, 200)
+        }
+        else if (e.data === 3) {
+          bufferingTick.current = Date.now()
+
+          if (seekHandle.current) {
+            clearTimeout(seekHandle.current)
+            seekHandle.current = undefined
+          }
+
+          if (bufferingTick.current - pauseTick.current <= 200) {
+            onSeek(playerRef2.current.getCurrentTime() || 0)
+          }
+        }
+      }, [onPause, onPlay, onSeek])}
       startTime={time}
     />
   )

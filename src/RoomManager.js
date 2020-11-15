@@ -4,7 +4,7 @@ const qs = require("query-string")
 const fs = require("fs")
 
 class RoomManager extends EventEmitter {
-  constructor(id) {
+  constructor (id) {
     super()
 
     this.id = id
@@ -25,7 +25,17 @@ class RoomManager extends EventEmitter {
   addClient(id, username) {
     if (id) {
       // this.clients.push(client)
-      this.clients.push({ id, username: username || "Unnamed User" })
+      this.clients.push({ id, username: username || "Unnamed User", ping: -1, syncDiff: 0 })
+    }
+  }
+
+  updateClient(id, newClient) {
+    if (id) {
+      const clientIndex = this.clients.findIndex(c => c.id === id)
+      if (clientIndex >= 0) {
+        this.clients[clientIndex] = { ...this.clients[clientIndex], ...newClient }
+        this.emit("client", this.clients[clientIndex])
+      }
     }
   }
 
@@ -81,7 +91,7 @@ class RoomManager extends EventEmitter {
               const thumbails = playerResponse.videoDetails.thumbnail.thumbnails
               // Get the 2nd best quality thumbnail
               const thumbnail = thumbails[thumbails.length > 1 ? thumbails.length - 2 : 0]
-    
+
               this.state = {
                 ...this.state,
                 queue: [
@@ -97,11 +107,11 @@ class RoomManager extends EventEmitter {
                   },
                 ],
               }
-    
+
               if (this.state.activeItem < 0 || this.state.finished) {
                 this.nextItem()
               }
-    
+
               this.emit("update")
               return
             }
@@ -154,7 +164,7 @@ class RoomManager extends EventEmitter {
       if (this.state.elapsed >= this.state.duration * 1000) {
         this.state.elapsed = this.state.duration * 1000
         this.syncActiveItem()
-  
+
         if (!this.state.queue[this.state.activeItem + 1]) {
           this.state.finished = true
           this.state.paused = true

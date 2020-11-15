@@ -65,6 +65,10 @@ io.on("connection", socket => {
     io.to(roomId).emit("STATE", room.state)
   })
 
+  socket.on("PING", (ping, syncDiff) => {
+    room.updateClient(socket.id, { ping, syncDiff })
+  })
+
   io.to(roomId).emit("INITIAL_STATE", {
     player: room.state,
     clients: room.clients,
@@ -88,6 +92,10 @@ RoomsManager.on("create", room => {
 
   room.on("error", err => {
     io.to(room.id).emit("ERROR", err)
+  })
+
+  room.on("client", client => {
+    io.to(room.id).emit("CLIENT", client)
   })
 })
 
