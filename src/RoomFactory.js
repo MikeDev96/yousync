@@ -14,7 +14,7 @@ class RoomFactory extends EventEmitter {
     const room = new RoomManager(id)
 
     if (username && video) {
-      room.addVideo(`https://www.youtube.com/watch?v=${video}`, username).then(() => {
+      room.addVideo(video, username).then(() => {
         room.selectVideo(0)
         room.pause()
       })
