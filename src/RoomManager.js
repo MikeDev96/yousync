@@ -81,7 +81,7 @@ class RoomManager extends EventEmitter {
 
   async addVideo(videoId, addedBy) {
     try {
-      const videoInfo = await axios(`https://www.youtube.com/get_video_info?video_id=${videoId}`)
+      const videoInfo = await axios(`https://www.youtube.com/get_video_info?video_id=${videoId}&eurl=${encodeURIComponent(`https://youtube.googleapis.com/v/${videoId}`)}`)
       if (videoInfo && videoInfo.data) {
         const decodedVideoData = decodeURI(videoInfo.data)
         const queryParams = qs.parse(decodedVideoData)
