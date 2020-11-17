@@ -5,6 +5,7 @@ import useLazyStateRef from "../hooks/useLazyStateRef"
 const ControlledYouTubePlayer = ({
   video, paused, time, onReady,
   ytPlayerRef, onPause, onPlay, onSeek,
+  playbackRate, onPlaybackRateChange,
 }, ref) => {
   const playerRef = useRef()
   const playerRef2 = useRef()
@@ -65,6 +66,14 @@ const ControlledYouTubePlayer = ({
     }
   }, [paused, ready, video])
 
+  useEffect(() => {
+    if (ready) {
+      if (playerRef2.current.getPlaybackRate() !== playbackRate) {
+        playerRef2.current.setPlaybackRate(playbackRate)
+      }
+    }
+  }, [playbackRate, ready])
+
   return (
     <YouTubeEmbeddedPlayer
       ref={playerRef}
@@ -101,6 +110,11 @@ const ControlledYouTubePlayer = ({
           }
         }
       }, [onPause, onPlay, onSeek])}
+      onPlaybackRateChange={useCallback(e => {
+        if (e.data !== playbackRate) {
+          onPlaybackRateChange(e.data)
+        }
+      }, [playbackRate, onPlaybackRateChange])}
       startTime={time}
     />
   )

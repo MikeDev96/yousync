@@ -141,6 +141,7 @@ function Room() {
     queue: [],
     activeItem: -1,
     finished: true,
+    speed: 1,
   })
 
   const [clientsState, setClientsState] = useState([])
@@ -343,6 +344,8 @@ function Room() {
               onPause={pause}
               onPlay={play}
               onSeek={useCallback(seconds => webSocketRef.current.emit("SEEK", seconds), [])}
+              playbackRate={playerState.speed}
+              onPlaybackRateChange={useCallback(speed => webSocketRef.current.emit("SET_SPEED", speed), [])}
             />
           </div>
         </div>

@@ -70,6 +70,11 @@ io.on("connection", socket => {
     io.to(roomId).emit("STATE", room.state)
   })
 
+  socket.on("SET_SPEED", speed => {
+    room.setSpeed(speed)
+    io.to(roomId).emit("STATE", room.state)
+  })
+
   socket.on("PING", (ping, syncDiff) => {
     room.updateClient(socket.id, { ping, syncDiff })
   })

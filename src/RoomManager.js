@@ -19,6 +19,7 @@ class RoomManager extends EventEmitter {
       queue: [],
       activeItem: -1,
       finished: false,
+      speed: 1,
     }
   }
 
@@ -198,7 +199,7 @@ class RoomManager extends EventEmitter {
         }
       }
       else {
-        this.state.elapsed += 1000
+        this.state.elapsed += 1000 * this.state.speed
         this.state.tick = Date.now()
         this.emit("time")
       }
@@ -256,6 +257,14 @@ class RoomManager extends EventEmitter {
         item.elapsed = this.state.elapsed
       }
     }
+  }
+
+  setSpeed(speed) {
+    this.state.elapsed += Date.now() - this.state.tick
+    this.syncActiveItem()
+    this.stopEndTimer()
+    this.state.speed = speed
+    this.startEndTimer()
   }
 }
 

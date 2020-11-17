@@ -1,11 +1,12 @@
 import React, { useEffect, forwardRef, useRef, useImperativeHandle } from "react"
 
 const YouTubeEmbeddedPlayer = ({
-  playerRef, onReady, onStateChange,
+  playerRef, onReady, onStateChange, onPlaybackRateChange,
 }, ref) => {
   const tempRef = useRef({
     onReady,
     onStateChange,
+    onPlaybackRateChange,
   })
 
   const ref2 = useRef()
@@ -16,8 +17,9 @@ const YouTubeEmbeddedPlayer = ({
     tempRef.current = {
       onReady,
       onStateChange,
+      onPlaybackRateChange,
     }
-  }, [onReady, onStateChange])
+  }, [onReady, onStateChange, onPlaybackRateChange])
 
   useEffect(() => {
     const tag = document.createElement("script")
@@ -49,6 +51,9 @@ const YouTubeEmbeddedPlayer = ({
           },
           onError: function(e){
             console.log(e)
+          },
+          onPlaybackRateChange: function(e) {
+            tempRef.current.onPlaybackRateChange(e)
           }
         }
       })
