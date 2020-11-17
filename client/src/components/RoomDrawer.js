@@ -7,10 +7,12 @@ import Typography from '@material-ui/core/Typography';
 import Divider from '@material-ui/core/Divider';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
-import { Avatar, Card, CardActionArea, CardContent, CardMedia, InputBase, LinearProgress, ListItemAvatar, ListSubheader, Slide, Tooltip } from '@material-ui/core';
+import { Avatar, Card, CardActionArea, CardContent, CardMedia, IconButton, InputBase, LinearProgress, ListItemAvatar, ListSubheader, Slide, Tooltip } from '@material-ui/core';
 import LinkIcon from '@material-ui/icons/Link';
 import YouTubeIcon from '@material-ui/icons/YouTube';
+import CloseIcon from '@material-ui/icons/Close';
 import clsx from "clsx"
+import MarqueeOverflow from './MarqueeOverflow';
 
 const drawerWidth = 240;
 
@@ -59,7 +61,7 @@ const useStyles = makeStyles((theme) => ({
     height: theme.spacing(4),
     position: "absolute",
     bottom: 0,
-    right: 0,
+    left: 0,
     margin: theme.spacing(1),
     backgroundColor: theme.palette.primary.main,
     color: theme.palette.text.primary,
@@ -145,19 +147,30 @@ const useStyles = makeStyles((theme) => ({
     display: "flex",
   },
   username: {
-    flexGrow: 1,
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
+    flexBasis: "50%",
   },
   ping: {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    flexBasis: "50%",
     marginLeft: theme.spacing(1),
+    textAlign: "right",
+  },
+  removeIconButton: {
+    padding: theme.spacing(0.5),
+    position: "absolute",
+    right: 0,
+    margin: theme.spacing(0.5),
   }
 }));
 
 const RoomDrawer = ({
   queue, clients, onVideoAdd, onVideoClick,
-  activeVideo, playTime,
+  activeVideo, playTime, onVideoRemove,
 }) => {
   const classes = useStyles();
 
@@ -174,6 +187,11 @@ const RoomDrawer = ({
 
     return acc
   }, [])
+
+  const handleVideoRemove = (e, itemIndex) => {
+    e.stopPropagation()
+    onVideoRemove(itemIndex)
+  }
 
   return (
     <Drawer
@@ -200,8 +218,10 @@ const RoomDrawer = ({
                       classes={{ primary: classes.usernameContainer }}
                       primary={
                         <Fragment>
-                          <span className={classes.username}>{client.username}</span>
-                          <span className={classes.ping}>{client.syncDiff}s / {client.ping}ms</span>
+                          <MarqueeOverflow className={classes.username}>
+                            {client.username}
+                          </MarqueeOverflow>
+                          <span className={classes.ping}>{client.syncDiff}s/{client.ping}ms</span>
                         </Fragment>
                       }
                     />
@@ -254,6 +274,9 @@ const RoomDrawer = ({
                           className={classes.cardImage}
                           image={item.thumbnail}
                         >
+                          <IconButton component="div" className={classes.removeIconButton} onClick={e => handleVideoRemove(e, itemIndex)}>
+                            <CloseIcon />
+                          </IconButton>
                           <Tooltip placement="left" title={`Added by ${item.addedBy}`}>
                             <Avatar className={classes.cardAvatar}>{item.addedBy.slice(0, 1)}</Avatar>
                           </Tooltip>

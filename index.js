@@ -65,6 +65,11 @@ io.on("connection", socket => {
     io.to(roomId).emit("STATE", room.state)
   })
 
+  socket.on("REMOVE_VIDEO", videoIndex => {
+    room.removeVideo(videoIndex)
+    io.to(roomId).emit("STATE", room.state)
+  })
+
   socket.on("PING", (ping, syncDiff) => {
     room.updateClient(socket.id, { ping, syncDiff })
   })

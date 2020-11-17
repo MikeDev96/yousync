@@ -157,6 +157,27 @@ class RoomManager extends EventEmitter {
     }
   }
 
+  removeVideo(videoIndex) {
+    if (videoIndex in this.state.queue) {
+      this.stopEndTimer()
+
+      this.state.queue.splice(videoIndex, 1)
+
+      if (!this.state.queue.length) {
+        this.state = {
+          ...this.state,
+          elapsed: 0,
+          video: "",
+          duration: 0,
+          activeItem: -1,
+        }
+      }
+      else {
+        this.selectVideo(videoIndex in this.state.queue ? videoIndex : videoIndex - 1)
+      }
+    }
+  }
+
   startEndTimer() {
     this.stopEndTimer()
     this.state.finished = false
