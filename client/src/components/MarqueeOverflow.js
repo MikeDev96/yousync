@@ -82,7 +82,7 @@ const MarqueeOverflow = ({
 
   return (
     <div className={clsx(className, classes.outer)} ref={outerRef} {...restProps}>
-      {cloneElement(children, { ...children.props, className: diff > 0 ? classes.inner : undefined, ref: innerRef })}
+      {cloneElement(children, { ...children.props, className: clsx(children.props.className, diff > 0 ? classes.inner : undefined), ref: innerRef })}
     </div>
   )
 }
