@@ -12,6 +12,7 @@ import useDefaultUsername from "../hooks/useDefaultUsername";
 import RoomDrawer from "./RoomDrawer";
 import usePrevious from "../hooks/usePrevious";
 import useGlobalState from "../state/useGlobalState";
+import useVisibility from "../hooks/useVisibility";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -151,6 +152,8 @@ function Room() {
   const [snackbarError, setSnackbarOpen] = useState("")
   const [playerBounds, setPlayerBounds] = useState([0, 0, 0])
   const [init, setInit] = useState(false)
+  const [muted, setMuted] = useState(-1)
+  const [volume, setVolume] = useState(-1)
 
   const playerRef = useRef()
   const webSocketRef = useRef()
@@ -163,6 +166,7 @@ function Room() {
 
   const username = useDefaultUsername()
   const { state } = useGlobalState()
+  const visibility = useVisibility()
 
   const someVideos = !!playerState.queue.length
 
@@ -306,6 +310,12 @@ function Room() {
     }
   }, [])
 
+  useEffect(() => {
+    if (ready) {
+      webSocketRef.current.emit("CLIENT_UPDATE", visibility, muted, volume)
+    }
+  }, [ready, visibility, muted, volume])
+
   return (
     <Fragment>
       <main className={classes.main}>
@@ -346,6 +356,8 @@ function Room() {
               onSeek={useCallback(seconds => webSocketRef.current.emit("SEEK", seconds), [])}
               playbackRate={playerState.speed}
               onPlaybackRateChange={useCallback(speed => webSocketRef.current.emit("SET_SPEED", speed), [])}
+              onMute={muted => setMuted(+muted)}
+              onVolume={setVolume}
             />
           </div>
         </div>

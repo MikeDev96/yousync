@@ -25,8 +25,15 @@ class RoomManager extends EventEmitter {
 
   addClient(id, username) {
     if (id) {
-      // this.clients.push(client)
-      this.clients.push({ id, username: username || "Unnamed User", ping: -1, syncDiff: 0 })
+      this.clients.push({
+        id,
+        username: username || "Unnamed User",
+        ping: -1,
+        syncDiff: 0,
+        visibility: "unknown",
+        muted: -1,
+        volume: -1
+      })
     }
   }
 
@@ -64,12 +71,20 @@ class RoomManager extends EventEmitter {
 
   pause(username) {
     if (!this.state.paused) {
-      this.state.elapsed += Date.now() - this.state.tick
       this.state.paused = true
       this.state.pauser = username
-      this.syncActiveItem()
-      this.stopEndTimer()
+      this.syncAndStop()
     }
+  }
+
+  syncElapsed() {
+    this.state.elapsed += Date.now() - this.state.tick
+    this.syncActiveItem()
+  }
+
+  syncAndStop() {
+    this.syncElapsed()
+    this.stopEndTimer()
   }
 
   seek(time) {
@@ -159,22 +174,30 @@ class RoomManager extends EventEmitter {
   }
 
   removeVideo(videoIndex) {
-    if (videoIndex in this.state.queue) {
-      this.stopEndTimer()
+    if (!this.state.queue[videoIndex]) {
+      return
+    }
 
-      this.state.queue.splice(videoIndex, 1)
-
-      if (!this.state.queue.length) {
-        this.state = {
-          ...this.state,
-          elapsed: 0,
-          video: "",
-          duration: 0,
-          activeItem: -1,
-        }
+    if (videoIndex <= this.state.activeItem) {
+      if (!this.state.paused) {
+        this.syncAndStop()
       }
-      else {
-        this.selectVideo(videoIndex in this.state.queue ? videoIndex : videoIndex - 1)
+    }
+
+    this.state.queue.splice(videoIndex, 1)
+
+    if (!this.state.queue.length) {
+      this.state = {
+        ...this.state,
+        elapsed: 0,
+        video: "",
+        duration: 0,
+        activeItem: -1,
+      }
+    }
+    else {
+      if (videoIndex < this.state.activeItem) {
+        this.selectVideo(this.state.activeItem - 1)
       }
     }
   }
@@ -184,6 +207,8 @@ class RoomManager extends EventEmitter {
     this.state.finished = false
     this.endHandle = setInterval(() => {
       if (this.state.elapsed >= this.state.duration * 1000) {
+        this.stopEndTimer()
+
         this.state.elapsed = this.state.duration * 1000
         this.syncActiveItem()
 

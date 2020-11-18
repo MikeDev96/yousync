@@ -79,6 +79,10 @@ io.on("connection", socket => {
     room.updateClient(socket.id, { ping, syncDiff })
   })
 
+  socket.on("CLIENT_UPDATE", (visibility, muted, volume) => {
+    room.updateClient(socket.id, { visibility, muted, volume })
+  })
+
   io.to(roomId).emit("INITIAL_STATE", {
     player: room.state,
     clients: room.clients,

@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import React, { createElement, Fragment } from 'react';
 import { fade, makeStyles } from '@material-ui/core/styles';
 import Drawer from '@material-ui/core/Drawer';
 import Toolbar from '@material-ui/core/Toolbar';
@@ -7,12 +7,16 @@ import Typography from '@material-ui/core/Typography';
 import Divider from '@material-ui/core/Divider';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
-import { Avatar, Card, CardActionArea, CardContent, CardMedia, IconButton, InputBase, LinearProgress, ListItemAvatar, ListSubheader, Slide, Tooltip } from '@material-ui/core';
+import { Avatar, Card, CardActionArea, CardContent, CardMedia, IconButton, InputBase, LinearProgress, ListSubheader, Slide, Tooltip } from '@material-ui/core';
 import LinkIcon from '@material-ui/icons/Link';
 import YouTubeIcon from '@material-ui/icons/YouTube';
 import CloseIcon from '@material-ui/icons/Close';
 import clsx from "clsx"
 import MarqueeOverflow from './MarqueeOverflow';
+import DesktopAccessDisabled from '@material-ui/icons/DesktopAccessDisabled';
+import VolumeOff from '@material-ui/icons/VolumeOff';
+import VolumeDown from '@material-ui/icons/VolumeDown';
+import VolumeUp from '@material-ui/icons/VolumeUp';
 
 const drawerWidth = 240;
 
@@ -147,10 +151,16 @@ const useStyles = makeStyles((theme) => ({
     display: "flex",
   },
   username: {
+    display: "flex",
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
     flexBasis: "50%",
+    // flexGrow: 1,
+  },
+  userWrapper: {
+    display: "inline-flex",
+    alignItems: "center",
   },
   ping: {
     overflow: "hidden",
@@ -165,7 +175,15 @@ const useStyles = makeStyles((theme) => ({
     position: "absolute",
     right: 0,
     margin: theme.spacing(0.5),
-  }
+  },
+  visibilityIcon: {
+    fontSize: "inherit",
+    marginRight: theme.spacing(0.5),
+  },
+  volumeIcon: {
+    fontSize: "inherit",
+    marginRight: theme.spacing(0.5),
+  },
 }));
 
 const RoomDrawer = ({
@@ -211,15 +229,18 @@ const RoomDrawer = ({
               {clients.map(client => (
                 <Slide key={client.id} in direction="left">
                   <ListItem button>
-                    <ListItemAvatar style={{ minWidth: 40 }}>
-                      <Avatar className={classes.userAvatar}>{client.username[0]}</Avatar>
-                    </ListItemAvatar>
                     <ListItemText
                       classes={{ primary: classes.usernameContainer }}
                       primary={
                         <Fragment>
                           <MarqueeOverflow className={classes.username}>
-                            {client.username}
+                            <span className={classes.userWrapper}>
+                              {client.visibility === "hidden" && <DesktopAccessDisabled className={classes.visibilityIcon} />}
+                              {client.volume >= 0 && client.muted >= 0 &&
+                                createElement(client.muted ? VolumeOff : client.volume < 50 ? VolumeDown : VolumeUp, { className: classes.volumeIcon })
+                              }
+                              {client.username}
+                            </span>
                           </MarqueeOverflow>
                           <span className={classes.ping}>{client.syncDiff}s/{client.ping}ms</span>
                         </Fragment>

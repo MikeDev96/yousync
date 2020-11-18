@@ -1,6 +1,6 @@
 import { makeStyles } from "@material-ui/core"
 import clsx from "clsx"
-import React, { useLayoutEffect, useMemo, useRef, useState } from "react"
+import React, { cloneElement, useLayoutEffect, useMemo, useRef, useState } from "react"
 
 const MarqueeOverflow = ({
   className, children, ...restProps
@@ -82,7 +82,7 @@ const MarqueeOverflow = ({
 
   return (
     <div className={clsx(className, classes.outer)} ref={outerRef} {...restProps}>
-      <span className={diff > 0 ? classes.inner : undefined} ref={innerRef}>{children}</span>
+      {cloneElement(children, { ...children.props, className: diff > 0 ? classes.inner : undefined, ref: innerRef })}
     </div>
   )
 }

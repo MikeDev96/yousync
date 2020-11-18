@@ -5,7 +5,7 @@ import useLazyStateRef from "../hooks/useLazyStateRef"
 const ControlledYouTubePlayer = ({
   video, paused, time, onReady,
   ytPlayerRef, onPause, onPlay, onSeek,
-  playbackRate, onPlaybackRateChange,
+  playbackRate, onPlaybackRateChange, onMute, onVolume,
 }, ref) => {
   const playerRef = useRef()
   const playerRef2 = useRef()
@@ -73,6 +73,52 @@ const ControlledYouTubePlayer = ({
       }
     }
   }, [playbackRate, ready])
+
+  useEffect(() => {
+    if (ready) {
+      let muted = playerRef2.current.isMuted()
+      if (typeof muted === "boolean") {
+        onMute(muted)
+      }
+
+      const handle = setInterval(() => {
+        const currentMuted = playerRef2.current.isMuted()
+        if (currentMuted !== muted) {
+          if (typeof currentMuted === "boolean") {
+            onMute(currentMuted)
+          }
+          muted = currentMuted
+        }
+      }, 5000)
+
+      return () => {
+        clearInterval(handle)
+      }
+    }
+  }, [ready, onMute])
+
+  useEffect(() => {
+    if (ready) {
+      let muted = playerRef2.current.getVolume()
+      if (typeof muted === "number") {
+        onVolume(muted)
+      }
+
+      const handle = setInterval(() => {
+        const currentMuted = playerRef2.current.getVolume()
+        if (currentMuted !== muted) {
+          if (typeof currentMuted === "number") {
+            onVolume(currentMuted)
+          }
+          muted = currentMuted
+        }
+      }, 5000)
+
+      return () => {
+        clearInterval(handle)
+      }
+    }
+  }, [ready, onVolume])
 
   return (
     <YouTubeEmbeddedPlayer
