@@ -235,9 +235,15 @@ const RoomDrawer = ({
                         <Fragment>
                           <MarqueeOverflow className={classes.username}>
                             <span className={classes.userWrapper}>
-                              {client.visibility === "hidden" && <DesktopAccessDisabled className={classes.visibilityIcon} />}
+                              {client.visibility === "hidden" &&
+                                <Tooltip placement="left" title="User isn't watching">
+                                  <DesktopAccessDisabled className={classes.visibilityIcon} />
+                                </Tooltip>
+                              }
                               {client.volume >= 0 && client.muted >= 0 &&
-                                createElement(client.muted ? VolumeOff : client.volume < 50 ? VolumeDown : VolumeUp, { className: classes.volumeIcon })
+                                <Tooltip placement="left" title={client.muted ? "Muted" : `Volume: ${client.volume}%`}>
+                                  {createElement(client.muted ? VolumeOff : client.volume < 50 ? VolumeDown : VolumeUp, { className: classes.volumeIcon })}
+                                </Tooltip>
                               }
                               {client.username}
                             </span>

@@ -81,6 +81,11 @@ const ControlledYouTubePlayer = ({
         onMute(muted)
       }
 
+      let volume = playerRef2.current.getVolume()
+      if (typeof volume === "number") {
+        onVolume(volume)
+      }
+
       const handle = setInterval(() => {
         const currentMuted = playerRef2.current.isMuted()
         if (currentMuted !== muted) {
@@ -89,36 +94,21 @@ const ControlledYouTubePlayer = ({
           }
           muted = currentMuted
         }
-      }, 5000)
 
-      return () => {
-        clearInterval(handle)
-      }
-    }
-  }, [ready, onMute])
-
-  useEffect(() => {
-    if (ready) {
-      let muted = playerRef2.current.getVolume()
-      if (typeof muted === "number") {
-        onVolume(muted)
-      }
-
-      const handle = setInterval(() => {
-        const currentMuted = playerRef2.current.getVolume()
-        if (currentMuted !== muted) {
-          if (typeof currentMuted === "number") {
-            onVolume(currentMuted)
+        const currentVolume = playerRef2.current.getVolume()
+        if (currentVolume !== volume) {
+          if (typeof currentVolume === "number") {
+            onVolume(currentVolume)
           }
-          muted = currentMuted
+          volume = currentVolume
         }
-      }, 5000)
+      }, 1000)
 
       return () => {
         clearInterval(handle)
       }
     }
-  }, [ready, onVolume])
+  }, [ready, onMute, onVolume])
 
   return (
     <YouTubeEmbeddedPlayer

@@ -22,93 +22,7 @@ const useStyles = makeStyles((theme) => ({
     flexGrow: 1,
     padding: theme.spacing(3),
     height: "100vh",
-    // Required for the fluid video player
     overflow: "hidden",
-  },
-  bar1Buffer: {
-    backgroundColor: "red",
-  },
-  // menuButton: {
-  //   marginRight: theme.spacing(2),
-  // },
-  volumeButton: {
-    marginRight: theme.spacing(2),
-  },
-  // buffer: rgba(255,255,255,.2)
-  timePlayed: {
-    marginRight: theme.spacing(2),
-  },
-  syncDiff: {
-    flexGrow: 1,
-  },
-  sliderRoot: {
-    width: 64,
-    // marginLeft: theme.spacing(2),
-    marginRight: theme.spacing(2),
-    color: "white",
-  },
-  timeSlider: {
-    // marginLeft: theme.spacing(2),
-    marginRight: theme.spacing(2),
-    color: "white",
-    height: 4,
-    padding: 0,
-    "&:focus > .MuiSlider-thumb, &:hover > .MuiSlider-thumb, &$active": {
-      display: "initial",
-    },
-    // Makes the scrubber easier to grab
-    marginTop: -10,
-    paddingTop: 10,
-  },
-  timeSliderRail: {
-    // marginLeft: theme.spacing(2),
-    marginRight: theme.spacing(2),
-    color: "white",
-    height: 4,
-  },
-  timeSliderThumb: {
-    marginTop: -4,
-    color: "red",
-    zIndex: 1101,
-    display: "none",
-  },
-  timeSliderTrack: {
-    height: 4,
-    color: "red",
-  },
-  avatars: {
-    marginRight: theme.spacing(2),
-    "& > *": {
-      width: theme.spacing(4),
-      height: theme.spacing(4),
-    }
-  },
-  avatar: {
-    backgroundColor: theme.palette.primary.main,
-    color: theme.palette.text.primary,
-    borderColor: "#fff",
-  },
-
-  videoBackground: {
-    position: "relative",
-    overflow: "hidden",
-    width: "100vw",
-    height: "100vh",
-
-    "& > iframe": {
-      position: "absolute",
-      top: "50%",
-      left: "50%",
-      width: "100vw",
-      height: "100vh",
-      transform: "translate(-50%, -50%)",
-      "@media (min-aspect-ratio: 16/9)": {
-        height: "56.25vw",
-      },
-      "@media (max-aspect-ratio: 16/9)": {
-        width: "177.78vh",
-      },
-    },
   },
   main: {
     flexGrow: 1,
@@ -124,27 +38,57 @@ const useStyles = makeStyles((theme) => ({
     display: "flex",
     flexDirection: "column",
   },
+  splash: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    pointerEvents: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "column",
+  },
+  splashInner: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "rgba(0,0,0,.8)",
+    borderRadius: theme.spacing(1),
+    padding: theme.spacing(2),
+    [theme.breakpoints.up("xs")]: {
+      transform: "scale(0.3)"
+    },
+    [theme.breakpoints.up("sm")]: {
+      transform: "scale(0.4)"
+    },
+    [theme.breakpoints.up("md")]: {
+      transform: "scale(0.7)"
+    },
+  },
 }))
 
-function Room() {
+const initialState = {
+  paused: true,
+  pauser: "",
+  tick: 0,
+  elapsed: 0,
+  video: "",
+  duration: 0,
+  queue: [],
+  activeItem: -1,
+  finished: true,
+  speed: 1,
+}
+
+const Room = () => {
   const { roomId } = useParams()
   const history = useHistory()
-
   const classes = useStyles()
 
-  const [playerState, setPlayerState] = useState({
-    paused: true,
-    pauser: "",
-    tick: 0,
-    elapsed: 0,
-    video: "",
-    duration: 0,
-    queue: [],
-    activeItem: -1,
-    finished: true,
-    speed: 1,
-  })
-
+  const [playerState, setPlayerState] = useState(initialState)
   const [clientsState, setClientsState] = useState([])
   const [ready, setReady] = useState(false)
   const [newTime, setNewTime] = useState(0)
@@ -331,8 +275,8 @@ function Room() {
         <div ref={playerContainerRef} className={classes.playerContainer}>
           <div style={{ width: playerBounds[0], height: playerBounds[1], marginLeft: playerBounds[2], position: "relative" }}>
             <Grow in={init && (!someVideos || (playerState.paused && !playerState.finished))}>
-              <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,.8)", borderRadius: 8, padding: 16, }}>
+              <div className={classes.splash}>
+                <div className={classes.splashInner}>
                   {!someVideos || !playerState.pauser ? <div style={{ fontSize: "12em" }}>{"😎"}</div> : <PauseIcon style={{ fontSize: "16em" }} />}
                   <Typography variant="h4" style={{ padding: "8px 16px", maxWidth: 600, whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>
                     {!someVideos || !playerState.pauser ? "Welcome to YouSync" : `Paused by ${playerState.pauser}`}
@@ -356,7 +300,7 @@ function Room() {
               onSeek={useCallback(seconds => webSocketRef.current.emit("SEEK", seconds), [])}
               playbackRate={playerState.speed}
               onPlaybackRateChange={useCallback(speed => webSocketRef.current.emit("SET_SPEED", speed), [])}
-              onMute={muted => setMuted(+muted)}
+              onMute={useCallback(muted => setMuted(+muted), [])}
               onVolume={setVolume}
             />
           </div>
