@@ -125,12 +125,18 @@ const ControlledYouTubePlayer = ({
           onPlay()
         }
         else if (e.data === 2) {
-          const curTime = playerRef2.current.getCurrentTime() || 0
+          // const curTime = playerRef2.current.getCurrentTime() || 0
 
           pauseTick.current = Date.now()
+
+          if (seekHandle.current) {
+            clearTimeout(seekHandle.current)
+            seekHandle.current = undefined
+          }
+
           seekHandle.current = setTimeout(() => {
             onPause()
-            playerRef2.current.seekTo(curTime + 0.3)
+            // playerRef2.current.seekTo(curTime + 0.3)
           }, 200)
         }
         else if (e.data === 3) {

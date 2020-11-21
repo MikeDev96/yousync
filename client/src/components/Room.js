@@ -114,8 +114,17 @@ const Room = () => {
 
   const someVideos = !!playerState.queue.length
 
-  const play = useCallback(() => webSocketRef.current.emit("PLAY"), [])
-  const pause = useCallback(() => webSocketRef.current.emit("PAUSE"), [])
+  const play = useCallback(() => {
+    if (playerStateRef.current.paused) {
+      webSocketRef.current.emit("PLAY")
+    }
+  }, [playerStateRef])
+
+  const pause = useCallback(() => {
+    if (!playerStateRef.current.paused) {
+      webSocketRef.current.emit("PAUSE")
+    }
+  }, [playerStateRef])
 
   const handleSnackbarClose = (e, reason) => {
     if (reason === "clickaway") {
@@ -184,7 +193,7 @@ const Room = () => {
     socket.on("ERROR", err => setSnackbarOpen(err))
 
     socket.on("pong", ms => {
-      webSocketRef.current.emit("PING", ms, diffRef.current.toFixed(2))
+      webSocketRef.current.emit("PING", ms, parseFloat(diffRef.current.toFixed(2)))
     })
     // socket.on("disconnect", () => history.replace("/"))
 
@@ -256,7 +265,7 @@ const Room = () => {
 
   useEffect(() => {
     if (ready) {
-      webSocketRef.current.emit("CLIENT_UPDATE", visibility, muted, volume)
+      webSocketRef.current.emit("CLIENT_UPDATE", visibility, muted, parseFloat(volume.toFixed(2)))
     }
   }, [ready, visibility, muted, volume])
 

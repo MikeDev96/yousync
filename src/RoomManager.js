@@ -178,7 +178,8 @@ class RoomManager extends EventEmitter {
       return
     }
 
-    if (videoIndex <= this.state.activeItem) {
+    const decrementIndex = videoIndex <= this.state.activeItem
+    if (decrementIndex) {
       if (!this.state.paused) {
         this.syncAndStop()
       }
@@ -196,7 +197,7 @@ class RoomManager extends EventEmitter {
       }
     }
     else {
-      if (videoIndex < this.state.activeItem) {
+      if (decrementIndex) {
         this.selectVideo(this.state.activeItem - 1)
       }
     }
