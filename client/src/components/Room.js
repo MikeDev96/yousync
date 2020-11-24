@@ -324,8 +324,8 @@ const Room = () => {
         queue={playerState.queue}
         clients={clientsState}
         onVideoAdd={url => webSocketRef.current.emit("VIDEO", url)}
-        onVideoClick={videoIndex => webSocketRef.current.emit("SELECT_VIDEO", videoIndex)}
-        onVideoRemove={videoIndex => webSocketRef.current.emit("REMOVE_VIDEO", videoIndex)}
+        onVideoClick={useCallback(videoIndex => webSocketRef.current.emit("SELECT_VIDEO", videoIndex), [])}
+        onVideoRemove={useCallback(videoIndex => webSocketRef.current.emit("REMOVE_VIDEO", videoIndex), [])}
         activeVideo={playerState.activeItem}
         playTime={playerState.elapsed / 1000}
       />

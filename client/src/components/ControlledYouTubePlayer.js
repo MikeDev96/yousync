@@ -120,7 +120,7 @@ const ControlledYouTubePlayer = ({
         onReady()
       }, [onReady])}
       onStateChange={useCallback(e => {
-        console.log(e.data)
+        // console.log(e.data)
         if (e.data === 1) {
           onPlay()
         }

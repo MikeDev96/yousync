@@ -21,6 +21,26 @@ const darkTheme = createMuiTheme({
     // },
     type: "dark",
   },
+  overrides: {
+    MuiCssBaseline: {
+      "@global": {
+        "*": {
+          "scrollbar-width": "thin",
+        },
+        "::-webkit-scrollbar": {
+          background: "#303030",
+          width: 7,
+        },
+        "::-webkit-scrollbar-track": {
+          background: "#606060",
+        },
+        "::-webkit-scrollbar-thumb": {
+          background: "#9e9e9e",
+          borderRadius: 10,
+        },
+      }
+    }
+  }
 })
 
 const useStyles = makeStyles((theme) => ({

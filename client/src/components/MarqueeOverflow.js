@@ -1,9 +1,9 @@
 import { makeStyles } from "@material-ui/core"
 import clsx from "clsx"
-import React, { cloneElement, useLayoutEffect, useMemo, useRef, useState } from "react"
+import React, { createElement, useLayoutEffect, useMemo, useRef, useState } from "react"
 
 const MarqueeOverflow = ({
-  className, children, ...restProps
+  className, children, component = "span", ...restProps
 }) => {
   const outerRef = useRef()
   const innerRef = useRef()
@@ -21,8 +21,12 @@ const MarqueeOverflow = ({
     const classes = {
       outer: {
         position: "relative",
+        overflow: "hidden",
       },
-      inner: {},
+      inner: {
+        display: "inline-flex",
+        whiteSpace: "nowrap",
+      },
     }
 
     if (diff > 0) {
@@ -43,7 +47,8 @@ const MarqueeOverflow = ({
       const perc4 = fadePerc + pausePerc + movePerc + pausePerc
 
       classes["inner"] = {
-        position: "absolute",
+        display: "inline-flex",
+        whiteSpace: "nowrap",
         animation: `$marquee ${totalTime}s linear infinite`,
       }
 
@@ -82,7 +87,10 @@ const MarqueeOverflow = ({
 
   return (
     <div className={clsx(className, classes.outer)} ref={outerRef} {...restProps}>
-      {cloneElement(children, { ...children.props, className: clsx(children.props.className, diff > 0 ? classes.inner : undefined), ref: innerRef })}
+      {createElement(component, {
+        className: classes.inner,
+        ref: innerRef,
+      }, children)}
     </div>
   )
 }
