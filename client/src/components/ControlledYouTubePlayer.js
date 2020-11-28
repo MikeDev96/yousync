@@ -23,7 +23,7 @@ const ControlledYouTubePlayer = ({
   useEffect(() => {
     if (ready) {
       console.log("Load video", video)
-      playerRef2.current.cueVideoById({
+      playerRef2.current.loadVideoById({
         videoId: video,
       })
     }

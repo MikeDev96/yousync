@@ -1,30 +1,19 @@
 const cors = require("cors")
-const WebSocket = require("ws")
-const { isEqual } = require("lodash")
-const queryString = require("query-string")
 const RoomsManager = require("./src/RoomFactory")
 
 const path = require("path")
 const express = require("express")
 const app = express()
 const http = require("http").createServer(app)
-// const io = require("socket.io")(http, { path: "/yousync/socket.io" })
 const io = require("socket.io")(http, { pingInterval: 5000 })
-
-// const app = express()
-// const server = http.createServer(app)
-// const wss = new WebSocket.Server({ server })
-// const socket = io(server)
 
 io.on("connection", socket => {
   if (!socket.handshake.query.id) {
-    // return socket.close(4000, "No room id was provided")
     return socket.error("No room id was provided")
   }
 
   const room = RoomsManager.getRoom(socket.handshake.query.id)
   if (!room) {
-    // return socket.disconnect(4001, "Room is provided is invalid")
     return socket.error("Room id provided is invalid")
   }
 
@@ -33,13 +22,6 @@ io.on("connection", socket => {
 
   const username = socket.handshake.query.username
   room.addClient(socket.id, username)
-  // socket.id
-
-
-
-
-
-
 
   socket.on("PLAY", () => {
     room.play()
@@ -116,19 +98,11 @@ RoomsManager.on("create", room => {
 app.use(cors())
 app.use("/api", require("./src/routes"))
 
-// if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "client/build")))
+app.use(express.static(path.join(__dirname, "client/build")))
 
-  app.get("*", function(req, res) {
-    res.sendFile(path.join(__dirname, "client/build", "index.html"))
-  })
-// }
-
-
-
-// app.use((req, res, next) => {
-//   res.sendFile(path.join(__dirname, "public", "index.html"));
-// });
+app.get("*", function(req, res) {
+  res.sendFile(path.join(__dirname, "client/build", "index.html"))
+})
 
 http.listen(process.env.PORT || 4001, () => {
   console.log(`Example app listening on port ${http.address().port}`)

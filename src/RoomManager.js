@@ -75,6 +75,7 @@ class RoomManager extends EventEmitter {
     if (!this.state.paused) {
       this.state.paused = true
       this.state.pauser = username
+      this.clearDelayedPlay()
       this.syncAndStop()
     }
   }
@@ -167,6 +168,7 @@ class RoomManager extends EventEmitter {
     this.state.queue.splice(videoIndex, 1)
 
     if (!this.state.queue.length) {
+      this.clearDelayedPlay()
       this.state = {
         ...this.state,
         elapsed: 0,
@@ -177,7 +179,9 @@ class RoomManager extends EventEmitter {
     }
     else {
       if (decrementIndex) {
-        this.selectVideo(this.state.activeItem - 1)
+        this.buffering()
+        this.selectVideo(Math.max(0, this.state.activeItem - 1))
+        this.delayedPlay()
       }
     }
   }
@@ -235,13 +239,13 @@ class RoomManager extends EventEmitter {
       video: nextItem.videoId,
       activeItem: nextItemIndex,
       duration: nextItem.duration,
-      // paused: true,
-      // pauser: "",
     }
 
     // this.startEndTimer()
+    this.buffering()
     this.updateTime(nextItem.elapsed)
 
+    this.delayedPlay()
     // setTimeout(() => {
     //   this.play()
     //   this.emit("update")
@@ -276,6 +280,29 @@ class RoomManager extends EventEmitter {
     this.stopEndTimer()
     this.state.speed = speed
     this.startEndTimer()
+  }
+
+  delayedPlay() {
+    this.clearDelayedPlay()
+    this.playHandle = setTimeout(() => {
+      this.playHandle = undefined
+      this.play()
+      this.emit("update")
+    }, 1000)
+  }
+
+  buffering() {
+    if (!this.state.paused) {
+      this.state.paused = true
+      this.state.pauser = "YouSync"
+    }
+  }
+
+  clearDelayedPlay() {
+    if (this.playHandle) {
+      clearTimeout(this.playHandle)
+      this.playHandle = undefined
+    }
   }
 }
 
