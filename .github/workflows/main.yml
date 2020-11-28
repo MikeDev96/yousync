@@ -1,0 +1,20 @@
+name: CI-CD
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  deployment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy
+        if: github.repository == 'MikeDev96/yousync'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            [ -d "/var/www/yousync" ] && cd /var/www/yousync && git pull && npm ci && cd client && npm ci && npm run build && pm2 reload yousync
