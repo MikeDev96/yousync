@@ -1,12 +1,12 @@
 import React, { createElement, forwardRef, Fragment, useCallback } from "react"
-import { makeStyles } from "@material-ui/core/styles"
+import { fade, makeStyles } from "@material-ui/core/styles"
 import Drawer from "@material-ui/core/Drawer"
 import Toolbar from "@material-ui/core/Toolbar"
 import List from "@material-ui/core/List"
 import Divider from "@material-ui/core/Divider"
 import ListItem from "@material-ui/core/ListItem"
 import ListItemText from "@material-ui/core/ListItemText"
-import { Avatar, IconButton, ListItemAvatar, ListSubheader, Slide, Tooltip } from "@material-ui/core"
+import { Avatar, InputBase, ListItemAvatar, ListSubheader, Slide, Tooltip } from "@material-ui/core"
 import LinkIcon from "@material-ui/icons/Link"
 import clsx from "clsx"
 import MarqueeOverflow from "./MarqueeOverflow"
@@ -38,12 +38,40 @@ const useStyles = makeStyles((theme) => ({
   listRoot: {
     display: "grid",
     height: "100%",
-    gridTemplateRows: "auto fit-content(50%) auto 1fr",
+    gridTemplateRows: "auto fit-content(50%) auto auto auto 1fr",
     backgroundColor: theme.palette.background.paper,
   },
   listSection: {
     overflow: "hidden",
     backgroundColor: "inherit",
+  },
+  search: {
+    position: "relative",
+    borderRadius: theme.shape.borderRadius,
+    backgroundColor: fade(theme.palette.common.white, 0.15),
+    "&:hover": {
+      backgroundColor: fade(theme.palette.common.white, 0.25),
+    },
+    marginLeft: 0,
+    width: "100%",
+  },
+  searchIcon: {
+    padding: theme.spacing(0, 1),
+    height: "100%",
+    position: "absolute",
+    pointerEvents: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  inputRoot: {
+    color: "inherit",
+  },
+  inputInput: {
+    padding: theme.spacing(1, 1, 1, 0),
+    paddingLeft: `calc(1em + ${theme.spacing(3)}px)`,
+    transition: theme.transitions.create("width"),
+    width: "100%",
   },
   ul: {
     display: "grid",
@@ -135,15 +163,14 @@ const RoomDrawer = ({
 
   const MarqueeOverflowUsername = useCallback(forwardRef((props, ref) => <span {...props} className={clsx(props.className, classes.userWrapper)} ref={ref} />), [])
 
-  const handleAdd = async () => {
-    try {
-      const text = await navigator.clipboard.readText()
-      onVideoAdd(text)
-    }
-    catch (err) {
-      console.log(err)
+  const handleKeyPress = e => {
+    if (e.key === "Enter") {
+      onVideoAdd(e.target.value)
+      e.target.value = ""
     }
   }
+
+  // clients = Array(20).fill(clients[0] || {})
 
   return (
     <Drawer
@@ -192,13 +219,32 @@ const RoomDrawer = ({
             </ul>
           </li>
           <Divider className={classes.divider} />
+          <li>
+            <ul className={classes.ul}>
+              <ListSubheader>{"Add Video"}</ListSubheader>
+              <ListItem>
+                <div className={classes.search}>
+                  <div className={classes.searchIcon}>
+                    <LinkIcon />
+                  </div>
+                  <InputBase
+                    placeholder="Paste link"
+                    classes={{
+                      root: classes.inputRoot,
+                      input: classes.inputInput,
+                    }}
+                    inputProps={{ "aria-label": "search" }}
+                    onKeyPress={handleKeyPress}
+                  />
+                </div>
+              </ListItem>
+            </ul>
+          </li>
+          <Divider className={classes.divider} />
           <li className={classes.listSection}>
             <List dense className={classes.ul}>
               <ListSubheader className={classes.queueSubheader}>
                 {"Queue"}
-                <IconButton edge="end" onClick={handleAdd}>
-                  <LinkIcon />
-                </IconButton>
               </ListSubheader>
               <div ref={register} >
                 {!!queue.length &&
