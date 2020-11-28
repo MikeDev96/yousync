@@ -2,6 +2,8 @@ const { EventEmitter } = require("events")
 const axios = require("axios")
 const qs = require("query-string")
 const fs = require("fs")
+const YouTubeParse = require("../YouTubeParse")
+const { v4: uuid } = require("uuid")
 
 class RoomManager extends EventEmitter {
   constructor (id) {
@@ -96,50 +98,27 @@ class RoomManager extends EventEmitter {
 
   async addVideo(videoId, addedBy) {
     try {
-      const videoInfo = await axios(`https://www.youtube.com/get_video_info?video_id=${videoId}&eurl=${encodeURIComponent(`https://youtube.googleapis.com/v/${videoId}`)}`)
-      if (videoInfo && videoInfo.data) {
-        const decodedVideoData = decodeURI(videoInfo.data)
-        const queryParams = qs.parse(decodedVideoData)
-        if (queryParams && queryParams.player_response) {
-          const playerResponse = JSON.parse(queryParams.player_response)
-          if (playerResponse.playabilityStatus) {
-            if (playerResponse.playabilityStatus.status === "OK") {
-              const thumbails = playerResponse.videoDetails.thumbnail.thumbnails
-              // Get the 2nd best quality thumbnail
-              const thumbnail = thumbails[thumbails.length > 1 ? thumbails.length - 2 : 0]
-
-              this.state = {
-                ...this.state,
-                queue: [
-                  ...this.state.queue,
-                  {
-                    id: playerResponse.videoDetails.videoId,
-                    title: playerResponse.videoDetails.title,
-                    author: playerResponse.videoDetails.author,
-                    thumbnail: thumbnail.url,
-                    duration: parseInt(playerResponse.videoDetails.lengthSeconds),
-                    addedBy,
-                    elapsed: 0,
-                  },
-                ],
-              }
-
-              if (this.state.activeItem < 0 || this.state.finished) {
-                this.nextItem()
-              }
-
-              this.emit("update")
-              return
-            }
-            else {
-              this.emit("error", playerResponse.playabilityStatus.reason)
-              return
-            }
-          }
+      const res = await new YouTubeParse().parse(videoId)
+      if (res) {
+        this.state = {
+          ...this.state,
+          queue: [
+            ...this.state.queue,
+            ...res.map(item => ({
+              ...item,
+              id: uuid(),
+              addedBy,
+              elapsed: 0,
+            })),
+          ],
         }
-      }
 
-      this.emit("error", "Failed to get player response")
+        if (this.state.activeItem < 0 || this.state.finished) {
+          this.nextItem()
+        }
+
+        this.emit("update")
+      }
     }
     catch (err) {
       console.log(err)
@@ -161,9 +140,9 @@ class RoomManager extends EventEmitter {
 
       this.state = {
         ...this.state,
-        paused: false,
+        // paused: false,
         // pauser: "",
-        video: newItem.id,
+        video: newItem.videoId,
         activeItem: videoIndex,
         duration: newItem.duration,
       }
@@ -217,12 +196,13 @@ class RoomManager extends EventEmitter {
           this.state.finished = true
           this.state.paused = true
           this.state.pauser = ""
-          this.emit("update")
         }
         else {
           this.nextItem()
-          this.emit("update")
         }
+
+        this.removeVideo(0)
+        this.emit("update")
       }
       else {
         this.state.elapsed += 1000 * this.state.speed
@@ -252,15 +232,20 @@ class RoomManager extends EventEmitter {
       ...this.state,
       // tick: Date.now(),
       // elapsed: 0,
-      video: nextItem.id,
+      video: nextItem.videoId,
       activeItem: nextItemIndex,
       duration: nextItem.duration,
-      paused: false,
+      // paused: true,
       // pauser: "",
     }
 
     // this.startEndTimer()
     this.updateTime(nextItem.elapsed)
+
+    // setTimeout(() => {
+    //   this.play()
+    //   this.emit("update")
+    // }, 1000)
   }
 
   updateTime(elapsed) {
