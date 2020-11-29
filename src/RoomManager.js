@@ -20,7 +20,6 @@ class RoomManager extends EventEmitter {
       duration: 0,
       queue: [],
       activeItem: -1,
-      finished: false,
       speed: 1,
     }
   }
@@ -60,14 +59,8 @@ class RoomManager extends EventEmitter {
 
   play() {
     if (this.state.paused) {
-      if (this.state.finished) {
-        this.selectVideo(0)
-      }
-      else {
-        this.state.paused = false
-        // this.state.pauser = ""
-        this.updateTime()
-      }
+      this.state.paused = false
+      this.updateTime()
     }
   }
 
@@ -113,7 +106,7 @@ class RoomManager extends EventEmitter {
           ],
         }
 
-        if (this.state.activeItem < 0 || this.state.finished) {
+        if (this.state.activeItem < 0) {
           this.nextItem()
         }
 
@@ -128,10 +121,10 @@ class RoomManager extends EventEmitter {
 
   userSelectVideo(videoIndex) {
     this.syncElapsed()
-    this.selectVideo(videoIndex)
+    this.selectVideo(videoIndex, true)
   }
 
-  selectVideo(videoIndex) {
+  selectVideo(videoIndex, delay = false) {
     if (!this.state.queue[videoIndex]) {
       return
     }
@@ -145,8 +138,8 @@ class RoomManager extends EventEmitter {
       duration: newItem.duration,
     }
 
-    const isItemFinished = newItem.elapsed === newItem.duration * 1000
-    this.updateTime(isItemFinished ? 0 : newItem.elapsed)
+    // This still needs testing, but client is sending a seek which is cancelling it out :/
+    this.updateTime(newItem.elapsed - (delay ? 1000 : 0))
   }
 
   removeVideo(videoIndex) {
@@ -181,7 +174,6 @@ class RoomManager extends EventEmitter {
 
   startEndTimer() {
     this.stopEndTimer()
-    this.state.finished = false
     this.endHandle = setInterval(() => {
       if (this.state.elapsed >= this.state.duration * 1000) {
         this.stopEndTimer()
@@ -189,16 +181,33 @@ class RoomManager extends EventEmitter {
         this.state.elapsed = this.state.duration * 1000
         this.syncActiveItem()
 
-        if (!this.state.queue[this.state.activeItem + 1]) {
-          this.state.finished = true
-          this.state.paused = true
-          this.state.pauser = ""
+        this.state.queue.splice(this.state.activeItem, 1)
+
+        if (!this.state.queue.length) {
+          this.state = {
+            ...this.state,
+            paused: true,
+            pauser: "",
+            video: "",
+            activeItem: -1,
+            duration: 0,
+          }
         }
         else {
-          this.nextItem()
+          const newActiveItem = this.state.queue[this.state.activeItem] ? this.state.activeItem : this.state.activeItem - 1
+          const nextItem = this.state.queue[newActiveItem]
+
+          this.state = {
+            ...this.state,
+            video: nextItem.videoId,
+            activeItem: newActiveItem,
+            duration: nextItem.duration,
+          }
+      
+          // Add 1000ms to give clients a chance to buffer
+          this.updateTime(nextItem.elapsed - 1000)
         }
 
-        this.removeVideo(0)
         this.emit("update")
       }
       else {
@@ -220,15 +229,8 @@ class RoomManager extends EventEmitter {
     const nextItemIndex = this.state.activeItem + 1
     const nextItem = this.state.queue[nextItemIndex]
 
-    // If it's finished, set it back to 0 so it plays again
-    if (nextItem.elapsed === nextItem.duration * 1000) {
-      nextItem.elapsed = 0
-    }
-
     this.state = {
       ...this.state,
-      // tick: Date.now(),
-      // elapsed: 0,
       video: nextItem.videoId,
       activeItem: nextItemIndex,
       duration: nextItem.duration,

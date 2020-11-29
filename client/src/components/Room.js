@@ -1,18 +1,17 @@
-import React, { useRef, useEffect, useCallback, useState, Fragment } from "react";
-import "../App.css";
-import useLazyStateRef from "../hooks/useLazyStateRef";
-import ControlledYouTubePlayer from "./ControlledYouTubePlayer";
-import { makeStyles, Typography, Toolbar, Grow, Snackbar } from "@material-ui/core";
-import "fontsource-roboto";
-import PauseIcon from "@material-ui/icons/Pause";
-import { useParams, useHistory } from "react-router-dom";
+import React, { useRef, useEffect, useCallback, useState, Fragment } from "react"
+import "../App.css"
+import useLazyStateRef from "../hooks/useLazyStateRef"
+import ControlledYouTubePlayer from "./ControlledYouTubePlayer"
+import { makeStyles, Typography, Toolbar, Grow, Snackbar } from "@material-ui/core"
+import "fontsource-roboto"
+import PauseIcon from "@material-ui/icons/Pause"
+import { useParams, useHistory } from "react-router-dom"
 import io from "socket.io-client"
 import Alert from "@material-ui/lab/Alert"
-import useDefaultUsername from "../hooks/useDefaultUsername";
-import RoomDrawer from "./RoomDrawer";
-import usePrevious from "../hooks/usePrevious";
-import useGlobalState from "../state/useGlobalState";
-import useVisibility from "../hooks/useVisibility";
+import useDefaultUsername from "../hooks/useDefaultUsername"
+import RoomDrawer from "./RoomDrawer"
+import usePrevious from "../hooks/usePrevious"
+import useVisibility from "../hooks/useVisibility"
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -79,9 +78,10 @@ const initialState = {
   duration: 0,
   queue: [],
   activeItem: -1,
-  finished: true,
   speed: 1,
 }
+
+const SYNC_THRESHOLD = 1
 
 const Room = () => {
   const { roomId } = useParams()
@@ -109,7 +109,6 @@ const Room = () => {
   const diffRef = useLazyStateRef(diff)
 
   const username = useDefaultUsername()
-  const { state } = useGlobalState()
   const visibility = useVisibility()
 
   const someVideos = !!playerState.queue.length
@@ -214,13 +213,13 @@ const Room = () => {
         console.log("Server:", parseFloat(serverTimeRound.toFixed(2)), "Client:", parseFloat(livePlayTime.toFixed(2)), "Diff:", difference.toFixed(2), "paused", playerStateRef.current.paused, "elapsed", playerState.elapsed)
         setDiff(difference)
 
-        if (differenceAbs > state.persist.syncThreshold) {
+        if (differenceAbs > SYNC_THRESHOLD) {
           console.log("Diff", difference, "is more than 1 second, syncing...")
           setNewTime(serverTimeRound)
         }
       }
     }
-  }, [playerState.elapsed, playerStateRef, ready, state.persist.syncThreshold])
+  }, [playerState.elapsed, playerStateRef, ready])
 
   useEffect(() => {
     let sound = ""
@@ -283,7 +282,7 @@ const Room = () => {
         </div>
         <div ref={playerContainerRef} className={classes.playerContainer}>
           <div style={{ width: playerBounds[0], height: playerBounds[1], marginLeft: playerBounds[2], position: "relative" }}>
-            <Grow in={init && (!someVideos || (playerState.paused && !playerState.finished))}>
+            <Grow in={init && (!someVideos || playerState.paused)}>
               <div className={classes.splash}>
                 <div className={classes.splashInner}>
                   {!someVideos || !playerState.pauser ? <div style={{ fontSize: "12em" }}>{"😎"}</div> : <PauseIcon style={{ fontSize: "16em" }} />}
@@ -327,10 +326,10 @@ const Room = () => {
         onVideoClick={useCallback(videoIndex => webSocketRef.current.emit("SELECT_VIDEO", videoIndex), [])}
         onVideoRemove={useCallback(videoIndex => webSocketRef.current.emit("REMOVE_VIDEO", videoIndex), [])}
         activeVideo={playerState.activeItem}
-        playTime={playerState.elapsed / 1000}
+        playTime={Math.max(Math.min(playerState.elapsed / 1000, playerState.duration), 0)}
       />
     </Fragment>
-  );
+  )
 }
 
 export default Room

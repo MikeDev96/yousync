@@ -253,7 +253,7 @@ const RoomDrawer = ({
                     itemSize={60}
                     itemCount={queue.length}
                     itemData={{
-                      queue: queue, activeVideo, playTime, classes,
+                      queue, activeVideo, playTime, classes,
                       onVideoClick, onVideoRemove,
                     }}>
                     {VideoRow}

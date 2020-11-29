@@ -1,6 +1,5 @@
 export const ACTION_SET_VOLUME = "SET_VOLUME"
 export const ACTION_TOGGLE_MUTE = "TOGGLE_MUTE"
-export const ACTION_SET_SYNC_THRESHOLD = "SET_SYNC_THRESHOLD"
 export const ACTION_SET_USERNAME = "SET_USERNAME"
 export const ACTION_SET_SETTINGS = "SET_SETTINGS"
 
@@ -17,13 +16,6 @@ export const toggleMute = () => {
   }
 }
 
-export const setSyncThreshold = seconds => {
-  return {
-    type: ACTION_SET_SYNC_THRESHOLD,
-    payload: seconds,
-  }
-}
-
 export const setUsername = username => {
   return {
     type: ACTION_SET_USERNAME,
@@ -31,9 +23,9 @@ export const setUsername = username => {
   }
 }
 
-export const setSettings = (username, syncThreshold) => {
+export const setSettings = username => {
   return {
     type: ACTION_SET_SETTINGS,
-    payload: { username, syncThreshold },
+    payload: { username },
   }
 }

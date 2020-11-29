@@ -1,4 +1,4 @@
-import { ACTION_SET_SETTINGS, ACTION_SET_SYNC_THRESHOLD, ACTION_SET_USERNAME, ACTION_SET_VOLUME, ACTION_TOGGLE_MUTE } from "./actions"
+import { ACTION_SET_SETTINGS, ACTION_SET_USERNAME, ACTION_SET_VOLUME, ACTION_TOGGLE_MUTE } from "./actions"
 
 export const reducer = (state, action) => {
   switch (action.type) {
@@ -19,14 +19,6 @@ export const reducer = (state, action) => {
           muted: !state.persist.muted,
         }
       }
-    case ACTION_SET_SYNC_THRESHOLD:
-      return {
-        ...state,
-        persist: {
-          ...state.persist,
-          syncThreshold: action.payload,
-        }
-      }
     case ACTION_SET_USERNAME:
       return {
         ...state,
@@ -41,7 +33,6 @@ export const reducer = (state, action) => {
         persist: {
           ...state.persist,
           username: action.payload.username,
-          syncThreshold: action.payload.syncThreshold,
         }
       }
     default:

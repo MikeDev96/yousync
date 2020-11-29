@@ -1,5 +1,5 @@
 import React, { forwardRef } from "react"
-import { Dialog, DialogTitle, TextField, DialogContent, DialogActions, Button, Grow, InputAdornment } from "@material-ui/core"
+import { Dialog, DialogTitle, TextField, DialogContent, DialogActions, Button, Grow } from "@material-ui/core"
 import useGlobalState from "../state/useGlobalState"
 import { setSettings } from "../state/actions"
 import { useForm } from "react-hook-form"
@@ -14,7 +14,6 @@ const SettingsDialog = ({
   const { handleSubmit, register, errors, reset } = useForm({
     defaultValues: {
       username: state.persist.username,
-      syncThreshold: state.persist.syncThreshold,
     },
   })
 
@@ -24,9 +23,8 @@ const SettingsDialog = ({
       <DialogContent>
         <form id="settings-form" onSubmit={handleSubmit(values => {
           const username = values.username
-          const syncThreshold = parseFloat(values.syncThreshold)
 
-          dispatch(setSettings(username, syncThreshold))
+          dispatch(setSettings(username))
           reset(values)
           onClose()
         })}>
@@ -41,24 +39,6 @@ const SettingsDialog = ({
             })}
             error={!!errors.username}
             helperText={(errors.username && errors.username.message) || "I'm sure you can figure out what this is :)"}
-          />
-          <TextField
-            margin="normal"
-            label="Sync Threshold"
-            fullWidth
-            name="syncThreshold"
-            type="number"
-            inputRef={register({
-              required: "Sync threshold is required",
-              min: { value: 0.1, message: "The minimum the sync threshold can be is 0.1s. I hope you've got some God internet." },
-              max: { value: 5, message: "This maximum the sync threshold can be is 5. Are you using 2G?" },
-            })}
-            error={!!errors.syncThreshold}
-            helperText={(errors.syncThreshold && errors.syncThreshold.message) || "This is the maximum amount of time you can be out of sync with the server before you're forcibly re-sync'd"}
-            endAdornment={<InputAdornment position="end">s</InputAdornment>}
-            inputProps={{
-              step: 0.1,
-            }}
           />
         </form>
       </DialogContent>

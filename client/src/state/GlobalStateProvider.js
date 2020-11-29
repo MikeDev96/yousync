@@ -9,7 +9,6 @@ const initialState = {
     username: "",
     volume: 100,
     muted: false,
-    syncThreshold: 1,
     ...JSON.parse(localStorage.getItem("persist")),
   },
 }

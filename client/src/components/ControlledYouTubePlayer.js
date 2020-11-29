@@ -12,6 +12,7 @@ const ControlledYouTubePlayer = ({
   const pauseTick = useRef(0)
   const bufferingTick = useRef(0)
   const seekHandle = useRef()
+  const preChecks = useRef(false)
 
   useImperativeHandle(ytPlayerRef, () => playerRef2.current)
   useImperativeHandle(ref, () => playerRef.current)
@@ -110,6 +111,10 @@ const ControlledYouTubePlayer = ({
     }
   }, [ready, onMute, onVolume])
 
+  useEffect(() => {
+    preChecks.current = false
+  }, [video])
+
   return (
     <YouTubeEmbeddedPlayer
       ref={playerRef}
@@ -120,13 +125,19 @@ const ControlledYouTubePlayer = ({
         onReady()
       }, [onReady])}
       onStateChange={useCallback(e => {
+        // -1 (unstarted)
+        // 0 (ended)
+        // 1 (playing)
+        // 2 (paused)
+        // 3 (buffering)
+        // 5 (video cued)
         // console.log(e.data)
+
         if (e.data === window.YT.PlayerState.PLAYING) {
+          preChecks.current = true
           onPlay()
         }
         else if (e.data === window.YT.PlayerState.PAUSED) {
-          // const curTime = playerRef2.current.getCurrentTime() || 0
-
           pauseTick.current = Date.now()
 
           if (seekHandle.current) {
@@ -135,6 +146,10 @@ const ControlledYouTubePlayer = ({
           }
 
           seekHandle.current = setTimeout(() => {
+            if (!preChecks.current) {
+              return
+            }
+
             onPause()
             // playerRef2.current.seekTo(curTime + 0.3)
           }, 200)
@@ -148,6 +163,10 @@ const ControlledYouTubePlayer = ({
           }
 
           if (bufferingTick.current - pauseTick.current <= 200) {
+            if (!preChecks.current) {
+              return
+            }
+
             onSeek(playerRef2.current.getCurrentTime() || 0)
           }
         }
