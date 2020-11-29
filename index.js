@@ -43,7 +43,7 @@ io.on("connection", socket => {
   })
 
   socket.on("SELECT_VIDEO", videoIndex => {
-    room.selectVideo(videoIndex)
+    room.userSelectVideo(videoIndex)
     io.to(roomId).emit("STATE", room.state)
   })
 

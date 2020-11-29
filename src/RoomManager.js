@@ -75,7 +75,6 @@ class RoomManager extends EventEmitter {
     if (!this.state.paused) {
       this.state.paused = true
       this.state.pauser = username
-      this.clearDelayedPlay()
       this.syncAndStop()
     }
   }
@@ -127,30 +126,27 @@ class RoomManager extends EventEmitter {
     }
   }
 
+  userSelectVideo(videoIndex) {
+    this.syncElapsed()
+    this.selectVideo(videoIndex)
+  }
+
   selectVideo(videoIndex) {
-    if (videoIndex in this.state.queue) {
-      const prevItem = this.state.queue[this.state.activeItem]
-
-      if (prevItem) {
-        prevItem.elapsed = this.state.paused ?
-          this.state.elapsed :
-          this.state.elapsed + Date.now() - this.state.tick
-      }
-
-      const newItem = this.state.queue[videoIndex]
-
-      this.state = {
-        ...this.state,
-        // paused: false,
-        // pauser: "",
-        video: newItem.videoId,
-        activeItem: videoIndex,
-        duration: newItem.duration,
-      }
-
-      const isItemFinished = newItem.elapsed === newItem.duration * 1000
-      this.updateTime(isItemFinished ? 0 : newItem.elapsed)
+    if (!this.state.queue[videoIndex]) {
+      return
     }
+
+    const newItem = this.state.queue[videoIndex]
+
+    this.state = {
+      ...this.state,
+      video: newItem.videoId,
+      activeItem: videoIndex,
+      duration: newItem.duration,
+    }
+
+    const isItemFinished = newItem.elapsed === newItem.duration * 1000
+    this.updateTime(isItemFinished ? 0 : newItem.elapsed)
   }
 
   removeVideo(videoIndex) {
@@ -168,7 +164,6 @@ class RoomManager extends EventEmitter {
     this.state.queue.splice(videoIndex, 1)
 
     if (!this.state.queue.length) {
-      this.clearDelayedPlay()
       this.state = {
         ...this.state,
         elapsed: 0,
@@ -179,9 +174,7 @@ class RoomManager extends EventEmitter {
     }
     else {
       if (decrementIndex) {
-        this.buffering()
-        this.selectVideo(Math.max(0, this.state.activeItem - 1))
-        this.delayedPlay()
+        this.selectVideo(Math.max(0, this.state.activeItem - 1), false)
       }
     }
   }
@@ -241,15 +234,7 @@ class RoomManager extends EventEmitter {
       duration: nextItem.duration,
     }
 
-    // this.startEndTimer()
-    this.buffering()
     this.updateTime(nextItem.elapsed)
-
-    this.delayedPlay()
-    // setTimeout(() => {
-    //   this.play()
-    //   this.emit("update")
-    // }, 1000)
   }
 
   updateTime(elapsed) {
@@ -280,29 +265,6 @@ class RoomManager extends EventEmitter {
     this.stopEndTimer()
     this.state.speed = speed
     this.startEndTimer()
-  }
-
-  delayedPlay() {
-    this.clearDelayedPlay()
-    this.playHandle = setTimeout(() => {
-      this.playHandle = undefined
-      this.play()
-      this.emit("update")
-    }, 1000)
-  }
-
-  buffering() {
-    if (!this.state.paused) {
-      this.state.paused = true
-      this.state.pauser = "YouSync"
-    }
-  }
-
-  clearDelayedPlay() {
-    if (this.playHandle) {
-      clearTimeout(this.playHandle)
-      this.playHandle = undefined
-    }
   }
 }
 

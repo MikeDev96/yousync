@@ -121,10 +121,10 @@ const ControlledYouTubePlayer = ({
       }, [onReady])}
       onStateChange={useCallback(e => {
         // console.log(e.data)
-        if (e.data === 1) {
+        if (e.data === window.YT.PlayerState.PLAYING) {
           onPlay()
         }
-        else if (e.data === 2) {
+        else if (e.data === window.YT.PlayerState.PAUSED) {
           // const curTime = playerRef2.current.getCurrentTime() || 0
 
           pauseTick.current = Date.now()
@@ -139,7 +139,7 @@ const ControlledYouTubePlayer = ({
             // playerRef2.current.seekTo(curTime + 0.3)
           }, 200)
         }
-        else if (e.data === 3) {
+        else if (e.data === window.YT.PlayerState.BUFFERING) {
           bufferingTick.current = Date.now()
 
           if (seekHandle.current) {
