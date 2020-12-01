@@ -6,7 +6,7 @@ import List from "@material-ui/core/List"
 import Divider from "@material-ui/core/Divider"
 import ListItem from "@material-ui/core/ListItem"
 import ListItemText from "@material-ui/core/ListItemText"
-import { Avatar, InputBase, ListItemAvatar, ListSubheader, Slide, Tooltip } from "@material-ui/core"
+import { Avatar, Hidden, InputBase, ListItemAvatar, ListSubheader, Slide, Tooltip } from "@material-ui/core"
 import LinkIcon from "@material-ui/icons/Link"
 import clsx from "clsx"
 import MarqueeOverflow from "./MarqueeOverflow"
@@ -17,6 +17,7 @@ import VolumeUp from "@material-ui/icons/VolumeUp"
 import { FixedSizeList } from "react-window"
 import useBounds from "../hooks/useBounds"
 import VideoRow from "./VideoRow"
+import useDrawerContext from "../hooks/useDrawerContext"
 
 const drawerWidth = 240
 
@@ -154,7 +155,47 @@ const useStyles = makeStyles((theme) => ({
   },
 }))
 
-const RoomDrawer = ({
+const RoomDrawer = props => {
+  const classes = useStyles()
+  const { open, toggle } = useDrawerContext()
+
+  return (
+    <Fragment>
+      <Hidden smUp implementation="css">
+        <Drawer
+          className={classes.drawer}
+          variant="temporary"
+          anchor="right"
+          open={open}
+          onClose={toggle}
+          classes={{
+            paper: classes.drawerPaper,
+          }}
+          ModalProps={{
+            keepMounted: true, // Better open performance on mobile.
+          }}
+        >
+          <RoomDrawerContent {...props} />
+        </Drawer>
+      </Hidden>
+      <Hidden xsDown implementation="css">
+        <Drawer
+          className={classes.drawer}
+          classes={{
+            paper: classes.drawerPaper,
+          }}
+          variant="permanent"
+          open
+          anchor="right"
+        >
+          <RoomDrawerContent {...props} />
+        </Drawer>
+      </Hidden>
+    </Fragment>
+  )
+}
+
+const RoomDrawerContent = ({
   queue, clients, onVideoAdd, onVideoClick,
   activeVideo, playTime, onVideoRemove,
 }) => {
@@ -173,14 +214,7 @@ const RoomDrawer = ({
   // clients = Array(20).fill(clients[0] || {})
 
   return (
-    <Drawer
-      className={classes.drawer}
-      variant="permanent"
-      classes={{
-        paper: classes.drawerPaper,
-      }}
-      anchor="right"
-    >
+    <Fragment>
       <Toolbar variant="dense" />
       <div className={classes.drawerContainer}>
         <List className={classes.listRoot} dense subheader={<li />}>
@@ -275,7 +309,7 @@ const RoomDrawer = ({
           </li>
         </List>
       </div>
-    </Drawer>
+    </Fragment>
   )
 }
 

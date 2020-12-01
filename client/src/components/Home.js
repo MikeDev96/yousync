@@ -1,11 +1,22 @@
 import React, { useCallback } from "react";
-import { Typography, Button } from "@material-ui/core";
+import { Typography, Button, makeStyles } from "@material-ui/core";
 import { useHistory } from "react-router-dom";
 import { APP_NAME } from "./Layout";
 import AppContainer from "./AppContainer";
 
+const useStyles = makeStyles(() => ({
+  title: {
+    marginTop: "1em",
+  },
+  buttonContainer: {
+    textAlign: "center",
+  },
+}))
+
 const Home = () => {
   const history = useHistory()
+
+  const classes = useStyles()
 
   const createRoom = useCallback(async () => {
     try {
@@ -18,7 +29,7 @@ const Home = () => {
 
       const data = await res.json()
       if (data.id) {
-        history.replace(`/room/${data.id}`)
+        history.push(`/room/${data.id}`)
       }
     }
     catch (err) {
@@ -28,13 +39,15 @@ const Home = () => {
 
   return (
     <AppContainer>
-      <Typography align="center" variant="h1" component="h2" gutterBottom>
-        Welcome to {APP_NAME}
+      <Typography align="center" className={classes.title} variant="h1" component="h2" gutterBottom>
+        {`Welcome to ${APP_NAME}`}
       </Typography>
-      <Button variant="contained" color="primary" onClick={createRoom}>
-        Create Room
-      </Button>
-      </AppContainer>
+      <div className={classes.buttonContainer}>
+        <Button variant="contained" color="primary" onClick={createRoom}>
+          {"Create Room"}
+        </Button>
+      </div>
+    </AppContainer>
   );
 }
 
