@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useCallback, useState, Fragment } from "react
 import "../App.css"
 import useLazyStateRef from "../hooks/useLazyStateRef"
 import ControlledYouTubePlayer from "./ControlledYouTubePlayer"
-import { makeStyles, Typography, Toolbar, Grow, Snackbar } from "@material-ui/core"
+import { makeStyles, Typography, Toolbar, Snackbar, Fade } from "@material-ui/core"
 import "fontsource-roboto"
 import PauseIcon from "@material-ui/icons/Pause"
 import { useParams, useHistory } from "react-router-dom"
@@ -45,27 +45,29 @@ const useStyles = makeStyles((theme) => ({
     height: "100%",
     pointerEvents: "none",
     display: "flex",
-    alignItems: "center",
+    alignItems: "start",
     justifyContent: "center",
     flexDirection: "column",
   },
-  splashInner: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "rgba(0,0,0,.8)",
-    borderRadius: theme.spacing(1),
-    padding: theme.spacing(2),
-    [theme.breakpoints.up("xs")]: {
-      transform: "scale(0.3)"
-    },
-    [theme.breakpoints.up("sm")]: {
-      transform: "scale(0.4)"
-    },
-    [theme.breakpoints.up("md")]: {
-      transform: "scale(0.7)"
-    },
+  splashHeader: {
+    padding: theme.spacing(1, 2),
+    background: "rgba(0,0,0,.6)",
+    borderTopRightRadius: theme.spacing(1),
+    borderBottomRightRadius: theme.spacing(1),
+    maxWidth: 400,
+  },
+  splashHeaderIcon: {
+    fontSize: "2rem",
+    marginRight: theme.spacing(1),
+  },
+  splashHeaderEmoji: {
+    fontSize: "1em",
+    marginRight: theme.spacing(1),
+  },
+  splashHeaderText: {
+    whiteSpace: "nowrap",
+    textOverflow: "ellipsis",
+    overflow: "hidden",
   },
 }))
 
@@ -259,17 +261,16 @@ const Room = () => {
         </div>
         <div ref={playerContainerRef} className={classes.playerContainer}>
           <div style={{ width: playerBounds[0], height: playerBounds[1], marginLeft: playerBounds[2], position: "relative" }}>
-            <Grow in={init && (!someVideos || playerState.paused)}>
-              <div className={classes.splash}>
-                <div className={classes.splashInner}>
-                  {!someVideos || !playerState.pauser ? <div style={{ fontSize: "12em" }}>{"😎"}</div> : <PauseIcon style={{ fontSize: "16em" }} />}
-                  <Typography variant="h4" style={{ padding: "8px 16px", maxWidth: 600, whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>
-                    {!someVideos || !playerState.pauser ? "Welcome to YouSync" : `Paused by ${playerState.pauser}`}
-                  </Typography>
-                  {(!someVideos || !playerState.pauser) && <Typography variant="subtitle1" color="textSecondary">{"Created by Mike"}</Typography>}
-                </div>
-              </div>
-            </Grow>
+            <div className={classes.splash}>
+              <Fade in={init && (!someVideos || playerState.paused)}>
+                <Typography className={classes.splashHeader} variant="h6" style={{ display: "flex", alignItems: "center" }}>
+                  {!someVideos ? <div className={classes.splashHeaderEmoji}>{"😎"}</div> : <PauseIcon className={classes.splashHeaderIcon} />}
+                  <div className={classes.splashHeaderText}>
+                    {!someVideos ? "Welcome to YouSync" : !playerState.pauser ? "Paused" : `Paused by ${playerState.pauser}`}
+                  </div>
+                </Typography>
+              </Fade>
+            </div>
             <ControlledYouTubePlayer
               ytPlayerRef={ytPlayerRef}
               ref={playerRef}
