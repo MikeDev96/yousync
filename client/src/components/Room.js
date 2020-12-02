@@ -81,8 +81,6 @@ const initialState = {
   speed: 1,
 }
 
-const SYNC_THRESHOLD = 1
-
 const Room = () => {
   const { roomId } = useParams()
   const history = useHistory()
@@ -91,7 +89,6 @@ const Room = () => {
   const [playerState, setPlayerState] = useState(initialState)
   const [clientsState, setClientsState] = useState([])
   const [ready, setReady] = useState(false)
-  const [newTime, setNewTime] = useState(0)
   const [diff, setDiff] = useState(0)
   const [snackbarError, setSnackbarOpen] = useState("")
   const [playerBounds, setPlayerBounds] = useState([0, 0, 0])
@@ -202,26 +199,6 @@ const Room = () => {
   }, [history, roomId, username, diffRef])
 
   useEffect(() => {
-    if (ready) {
-      if (playerStateRef.current.video) {
-        const serverTime = playerState.elapsed
-        const serverTimeRound = serverTime / 1000
-        const livePlayTime = ytPlayerRef.current.getCurrentTime() || 0
-        const difference = livePlayTime - serverTimeRound
-        const differenceAbs = Math.abs(livePlayTime - serverTimeRound)
-
-        console.log("Server:", parseFloat(serverTimeRound.toFixed(2)), "Client:", parseFloat(livePlayTime.toFixed(2)), "Diff:", difference.toFixed(2), "paused", playerStateRef.current.paused, "elapsed", playerState.elapsed)
-        setDiff(difference)
-
-        if (differenceAbs > SYNC_THRESHOLD) {
-          console.log("Diff", difference, "is more than 1 second, syncing...")
-          setNewTime(serverTimeRound)
-        }
-      }
-    }
-  }, [playerState.elapsed, playerStateRef, ready])
-
-  useEffect(() => {
     let sound = ""
 
     if (prevClientsState.length !== clientsState.length) {
@@ -299,7 +276,7 @@ const Room = () => {
               video={playerState.video}
               duration={playerState.duration}
               paused={playerState.paused}
-              time={newTime}
+              time={playerState.elapsed / 1000}
               onReady={useCallback(() => {
                 setReady(true)
               }, [])}
@@ -310,6 +287,7 @@ const Room = () => {
               onPlaybackRateChange={useCallback(speed => webSocketRef.current.emit("SET_SPEED", speed), [])}
               onMute={useCallback(muted => setMuted(+muted), [])}
               onVolume={setVolume}
+              onDiff={setDiff}
             />
           </div>
         </div>

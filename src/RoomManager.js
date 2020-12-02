@@ -139,7 +139,7 @@ class RoomManager extends EventEmitter {
     }
 
     // This still needs testing, but client is sending a seek which is cancelling it out :/
-    this.updateTime(newItem.elapsed - (delay ? 1000 : 0))
+    this.updateTime(newItem.elapsed, delay)
   }
 
   removeVideo(videoIndex) {
@@ -172,9 +172,15 @@ class RoomManager extends EventEmitter {
     }
   }
 
-  startEndTimer() {
+  startEndTimer(delay) {
     this.stopEndTimer()
+    let delayed = false
     this.endHandle = setInterval(() => {
+      if (delay && !delayed) {
+        delayed = true
+        return
+      }
+
       if (this.state.elapsed >= this.state.duration * 1000) {
         this.stopEndTimer()
 
@@ -188,9 +194,10 @@ class RoomManager extends EventEmitter {
             ...this.state,
             paused: true,
             pauser: "",
+            elapsed: 0,
             video: "",
-            activeItem: -1,
             duration: 0,
+            activeItem: -1,
           }
         }
         else {
@@ -205,7 +212,7 @@ class RoomManager extends EventEmitter {
           }
       
           // Add 1000ms to give clients a chance to buffer
-          this.updateTime(nextItem.elapsed - 1000)
+          this.updateTime(nextItem.elapsed, true)
         }
 
         this.emit("update")
@@ -239,7 +246,7 @@ class RoomManager extends EventEmitter {
     this.updateTime(nextItem.elapsed)
   }
 
-  updateTime(elapsed) {
+  updateTime(elapsed, delay) {
     this.state.tick = Date.now()
 
     if (typeof elapsed === "number") {
@@ -248,7 +255,7 @@ class RoomManager extends EventEmitter {
     }
 
     if (!this.state.paused) {
-      this.startEndTimer()
+      this.startEndTimer(delay)
     }
   }
 

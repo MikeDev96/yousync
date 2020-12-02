@@ -6,66 +6,63 @@ const ControlledYouTubePlayer = ({
   video, paused, time, onReady,
   ytPlayerRef, onPause, onPlay, onSeek,
   playbackRate, onPlaybackRateChange, onMute, onVolume,
+  onDiff,
 }, ref) => {
   const playerRef = useRef()
   const playerRef2 = useRef()
   const pauseTick = useRef(0)
-  const bufferingTick = useRef(0)
   const seekHandle = useRef()
-  const preChecks = useRef(false)
+  const preBufferState = useRef(0)
+  const prevCurrentTime = useRef(0)
+  const prevCurrentTimeTick = useRef(0)
 
   useImperativeHandle(ytPlayerRef, () => playerRef2.current)
   useImperativeHandle(ref, () => playerRef.current)
 
   const [ready, setReady] = useState(false)
+  const [preBuffered, setPreBuffered] = useState(false)
 
-  const videoStateRef = useLazyStateRef(video)
+  const timeRef = useLazyStateRef(time)
+
+  const clearSeekCheck = useCallback(() => {
+    if (seekHandle.current) {
+      clearTimeout(seekHandle.current)
+      seekHandle.current = undefined
+    }
+  }, [])
+
+  useEffect(() => {
+    console.log("Setting pre-buffer state to 0")
+    preBufferState.current = 0
+    prevCurrentTime.current = 0
+    setPreBuffered(false)
+    clearSeekCheck()
+  }, [video, clearSeekCheck])
 
   useEffect(() => {
     if (ready) {
-      console.log("Load video", video)
+      console.log("Load %s at %.2fs", video, timeRef.current)
       playerRef2.current.loadVideoById({
         videoId: video,
+        startSeconds: timeRef.current,
       })
     }
-  }, [video, ready])
-
-  /*
-    There was a bug when a video had finished playing,
-    and then it was selected in the queue to play again,
-    the server would start playing it but the client's player
-    would still be paused causing a powerpoint effect.
-    This was caused by the player being played before it was
-    seeked back to the start and because the player was already
-    at the end of the video, it immediately paused itself. By
-    adding the dependancy on [paused] it will cause it to fire
-    again once the [newTime] state has updated in Room.js
-
-    This isn't good enough, the video now skips whenever its paused
-    but my brain is fried, rethink tomorrow :)
-  */
-  useEffect(() => {
-    if (ready) {
-      // if (videoStateRef.current && !pausedStateRef.current) {
-      if (videoStateRef.current) {
-        // console.log(`Seek to ${time}`)
-        playerRef2.current.seekTo(time)
-      }
-    }
-  }, [/*paused,*/ ready, time, videoStateRef])
+  }, [video, ready, timeRef])
 
   useEffect(() => {
-    if (ready) {
-      if (paused) {
-        console.log("Pause video")
-        playerRef2.current.pauseVideo()
-      }
-      else {
-        console.log("Play video")
-        playerRef2.current.playVideo()
-      }
+    if (!ready || preBufferState.current < 2) {
+      return
     }
-  }, [paused, ready, video])
+
+    if (paused) {
+      console.log("Pause video")
+      playerRef2.current.pauseVideo()
+    }
+    else {
+      console.log("Play video")
+      playerRef2.current.playVideo()
+    }
+  }, [paused, ready, video, preBuffered])
 
   useEffect(() => {
     if (ready) {
@@ -112,8 +109,22 @@ const ControlledYouTubePlayer = ({
   }, [ready, onMute, onVolume])
 
   useEffect(() => {
-    preChecks.current = false
-  }, [video])
+    if (!ready || preBufferState.current < 2) {
+      return
+    }
+
+    const currentTime = playerRef2.current.getCurrentTime() || 0
+    const difference = currentTime - time
+    const absDifference = Math.abs(difference)
+
+    console.log("Difference between client and server is %.2fs", difference)
+    onDiff(difference)
+
+    if (absDifference > 1) {
+      console.log("Seeking to %.2fs", time)
+      playerRef2.current.seekTo(time)
+    }
+  }, [ready, time, preBuffered, onDiff])
 
   return (
     <YouTubeEmbeddedPlayer
@@ -133,44 +144,61 @@ const ControlledYouTubePlayer = ({
         // 5 (video cued)
         // console.log(e.data)
 
+        if (preBufferState.current < 2) {
+          if (e.data === window.YT.PlayerState.BUFFERING) {
+            if (preBufferState.current === 0) {
+              console.log("Setting pre-buffer state to 1")
+              preBufferState.current = 1
+            }
+          }
+          else if (e.data === window.YT.PlayerState.PLAYING) {
+            if (preBufferState.current === 1) {
+              console.log("Setting pre-buffer state to 2")
+              preBufferState.current = 2
+              setPreBuffered(true)
+            }
+          }
+
+          return
+        }
+
         if (e.data === window.YT.PlayerState.PLAYING) {
-          preChecks.current = true
           onPlay()
         }
         else if (e.data === window.YT.PlayerState.PAUSED) {
           pauseTick.current = Date.now()
 
-          if (seekHandle.current) {
-            clearTimeout(seekHandle.current)
-            seekHandle.current = undefined
-          }
-
+          clearSeekCheck()
           seekHandle.current = setTimeout(() => {
-            if (!preChecks.current) {
-              return
-            }
-
             onPause()
             // playerRef2.current.seekTo(curTime + 0.3)
           }, 200)
         }
         else if (e.data === window.YT.PlayerState.BUFFERING) {
-          bufferingTick.current = Date.now()
+          const currentTime = playerRef2.current.getCurrentTime() || 0
 
-          if (seekHandle.current) {
-            clearTimeout(seekHandle.current)
-            seekHandle.current = undefined
+          clearSeekCheck()
+          if (Date.now() - pauseTick.current <= 200) {
+            onSeek(currentTime)
           }
-
-          if (bufferingTick.current - pauseTick.current <= 200) {
-            if (!preChecks.current) {
-              return
+          else {
+            // Attempt to detect seeking with arrow keys
+            const prevCurrentTimeEstimate = prevCurrentTime.current + ((Date.now() - prevCurrentTimeTick.current) / 1000)
+            const seekDiff = currentTime - prevCurrentTimeEstimate
+            const absSeekDiff = Math.abs(seekDiff)
+  
+            const syncDiff = Math.abs(timeRef.current - currentTime)
+  
+            if (absSeekDiff >= 4.8 && absSeekDiff <= 5.2 && syncDiff >= 4 && syncDiff <= 6) {
+              onSeek(playerRef2.current.getCurrentTime() || 0)
+              console.log("Seeked %s5s with arrow key", seekDiff < 1 ? "-" : "+")
             }
-
-            onSeek(playerRef2.current.getCurrentTime() || 0)
           }
         }
-      }, [onPause, onPlay, onSeek])}
+
+        prevCurrentTime.current = playerRef2.current.getCurrentTime() || 0
+        prevCurrentTimeTick.current = Date.now()
+      }, [onPause, onPlay, onSeek, preBufferState, clearSeekCheck, timeRef])}
       onPlaybackRateChange={useCallback(e => {
         if (e.data !== playbackRate) {
           onPlaybackRateChange(e.data)
