@@ -179,7 +179,7 @@ const ControlledYouTubePlayer = ({
 
           clearSeekCheck()
           if (Date.now() - pauseTick.current <= 200) {
-            onSeek(currentTime)
+            onSeek(currentTime, 0)
           }
           else {
             // Attempt to detect seeking with arrow keys
@@ -190,7 +190,7 @@ const ControlledYouTubePlayer = ({
             const syncDiff = Math.abs(timeRef.current - currentTime)
   
             if (absSeekDiff >= 4.8 && absSeekDiff <= 5.2 && syncDiff >= 4 && syncDiff <= 6) {
-              onSeek(playerRef2.current.getCurrentTime() || 0)
+              onSeek(playerRef2.current.getCurrentTime() || 0, seekDiff < 1 ? -5 : 5)
               console.log("Seeked %s5s with arrow key", seekDiff < 1 ? "-" : "+")
             }
           }
@@ -204,7 +204,6 @@ const ControlledYouTubePlayer = ({
           onPlaybackRateChange(e.data)
         }
       }, [playbackRate, onPlaybackRateChange])}
-      startTime={time}
     />
   )
 }

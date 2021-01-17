@@ -4,6 +4,10 @@ const qs = require("query-string")
 const fs = require("fs")
 const YouTubeParse = require("../YouTubeParse")
 const { v4: uuid } = require("uuid")
+const pms = require("pretty-ms")
+const StatusManager = require("./StatusManager")
+
+const DEFAULT_STATUS = "YouSync 😎 Welcome"
 
 class RoomManager extends EventEmitter {
   constructor (id) {
@@ -13,7 +17,6 @@ class RoomManager extends EventEmitter {
     this.clients = []
     this.state = {
       paused: true,
-      pauser: "",
       tick: 0,
       elapsed: 0,
       video: "",
@@ -21,7 +24,17 @@ class RoomManager extends EventEmitter {
       queue: [],
       activeItem: -1,
       speed: 1,
+      statusText: DEFAULT_STATUS,
     }
+    
+    this.statusManager = new StatusManager(DEFAULT_STATUS, 3000)
+    this.statusManager.on("update", status => {
+      this.state.statusText = status
+    })
+    this.statusManager.on("timeout", status => {
+      this.state.statusText = status
+      this.emit("update")
+    })
   }
 
   addClient(id, username) {
@@ -57,9 +70,11 @@ class RoomManager extends EventEmitter {
     }
   }
 
-  play() {
+  play(username) {
     if (this.state.paused) {
       this.state.paused = false
+      this.statusManager.setDefault("")
+      this.statusManager.set(`${username} ▶️`)
       this.updateTime()
     }
   }
@@ -67,7 +82,8 @@ class RoomManager extends EventEmitter {
   pause(username) {
     if (!this.state.paused) {
       this.state.paused = true
-      this.state.pauser = username
+      this.statusManager.setDefault(`${username} ⏸`)
+      this.statusManager.set(`${username} ⏸`)
       this.syncAndStop()
     }
   }
@@ -82,10 +98,12 @@ class RoomManager extends EventEmitter {
     this.stopEndTimer()
   }
 
-  seek(time) {
-    // this.state.elapsed = time * 1000
-    // this.state.tick = Date.now()
-    // this.startEndTimer()
+  seek(time, diff, username) {
+    const seekText = diff ?
+      `${diff < 0 ? "⏪" : "⏩"} ${Math.abs(diff)}s` :
+      `${time * 1000 < this.state.elapsed ? "⏪" : "⏩"} ${pms(Math.round(time) * 1000, { colonNotation: true })}`
+
+    this.statusManager.set(`${username} ${seekText}`)
     this.updateTime(time * 1000)
   }
 
@@ -108,8 +126,10 @@ class RoomManager extends EventEmitter {
 
         if (this.state.activeItem < 0) {
           this.nextItem()
+          this.statusManager.setDefault(`YouSync ⏸`)
         }
 
+        this.statusManager.set(`${addedBy} 🎞️ Added Video`)
         this.emit("update")
       }
     }
@@ -119,9 +139,14 @@ class RoomManager extends EventEmitter {
     }
   }
 
-  userSelectVideo(videoIndex) {
+  userSelectVideo(videoIndex, username) {
+    if (videoIndex === this.state.activeItem) {
+      return
+    }
+
     this.syncElapsed()
     this.selectVideo(videoIndex, true)
+    this.statusManager.set(`${username} 👆 Changed Video`)
   }
 
   selectVideo(videoIndex, delay = false) {
@@ -142,7 +167,7 @@ class RoomManager extends EventEmitter {
     this.updateTime(newItem.elapsed, delay)
   }
 
-  removeVideo(videoIndex) {
+  removeVideo(videoIndex, username) {
     if (!this.state.queue[videoIndex]) {
       return
     }
@@ -157,19 +182,15 @@ class RoomManager extends EventEmitter {
     this.state.queue.splice(videoIndex, 1)
 
     if (!this.state.queue.length) {
-      this.state = {
-        ...this.state,
-        elapsed: 0,
-        video: "",
-        duration: 0,
-        activeItem: -1,
-      }
+      this.resetPlayer()
     }
     else {
       if (decrementIndex) {
         this.selectVideo(Math.max(0, this.state.activeItem - 1), false)
       }
     }
+
+    this.statusManager.set(`${username} ❌ Removed Video`)
   }
 
   startEndTimer(delay) {
@@ -190,15 +211,8 @@ class RoomManager extends EventEmitter {
         this.state.queue.splice(this.state.activeItem, 1)
 
         if (!this.state.queue.length) {
-          this.state = {
-            ...this.state,
-            paused: true,
-            pauser: "",
-            elapsed: 0,
-            video: "",
-            duration: 0,
-            activeItem: -1,
-          }
+          this.resetPlayer()
+          this.statusManager.clear()
         }
         else {
           const newActiveItem = this.state.queue[this.state.activeItem] ? this.state.activeItem : this.state.activeItem - 1
@@ -223,6 +237,19 @@ class RoomManager extends EventEmitter {
         this.emit("time")
       }
     }, 1000)
+  }
+
+  resetPlayer() {
+    this.state = {
+      ...this.state,
+      paused: true,
+      elapsed: 0,
+      video: "",
+      duration: 0,
+      activeItem: -1,
+    }
+
+    this.statusManager.setDefault(DEFAULT_STATUS)
   }
 
   stopEndTimer() {
@@ -268,7 +295,8 @@ class RoomManager extends EventEmitter {
     }
   }
 
-  setSpeed(speed) {
+  setSpeed(speed, username) {
+    this.statusManager.set(`${username} ${speed > this.state.speed ? "💨" : "🐌"} ${speed}x Speed`)
     this.state.elapsed += Date.now() - this.state.tick
     this.syncActiveItem()
     this.stopEndTimer()

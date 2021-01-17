@@ -24,7 +24,7 @@ io.on("connection", socket => {
   room.addClient(socket.id, username)
 
   socket.on("PLAY", () => {
-    room.play()
+    room.play(username)
     io.to(roomId).emit("STATE", room.state)
   })
   
@@ -33,8 +33,8 @@ io.on("connection", socket => {
     io.to(roomId).emit("STATE", room.state)
   })
 
-  socket.on("SEEK", time => {
-    room.seek(time)
+  socket.on("SEEK", (time, diff) => {
+    room.seek(time, diff, username)
     io.to(roomId).emit("STATE", room.state)
   })
 
@@ -43,17 +43,17 @@ io.on("connection", socket => {
   })
 
   socket.on("SELECT_VIDEO", videoIndex => {
-    room.userSelectVideo(videoIndex)
+    room.userSelectVideo(videoIndex, username)
     io.to(roomId).emit("STATE", room.state)
   })
 
   socket.on("REMOVE_VIDEO", videoIndex => {
-    room.removeVideo(videoIndex)
+    room.removeVideo(videoIndex, username)
     io.to(roomId).emit("STATE", room.state)
   })
 
   socket.on("SET_SPEED", speed => {
-    room.setSpeed(speed)
+    room.setSpeed(speed, username)
     io.to(roomId).emit("STATE", room.state)
   })
 

@@ -4,7 +4,6 @@ import useLazyStateRef from "../hooks/useLazyStateRef"
 import ControlledYouTubePlayer from "./ControlledYouTubePlayer"
 import { makeStyles, Typography, Toolbar, Snackbar, Fade } from "@material-ui/core"
 import "fontsource-roboto"
-import PauseIcon from "@material-ui/icons/Pause"
 import { useParams, useHistory } from "react-router-dom"
 import io from "socket.io-client"
 import Alert from "@material-ui/lab/Alert"
@@ -73,7 +72,6 @@ const useStyles = makeStyles((theme) => ({
 
 const initialState = {
   paused: true,
-  pauser: "",
   tick: 0,
   elapsed: 0,
   video: "",
@@ -81,6 +79,7 @@ const initialState = {
   queue: [],
   activeItem: -1,
   speed: 1,
+  statusText: "",
 }
 
 const Room = () => {
@@ -94,9 +93,9 @@ const Room = () => {
   const [diff, setDiff] = useState(0)
   const [snackbarError, setSnackbarOpen] = useState("")
   const [playerBounds, setPlayerBounds] = useState([0, 0, 0])
-  const [init, setInit] = useState(false)
   const [muted, setMuted] = useState(-1)
   const [volume, setVolume] = useState(-1)
+  const [status, setStatus] = useState("")
 
   const playerRef = useRef()
   const webSocketRef = useRef()
@@ -109,8 +108,6 @@ const Room = () => {
 
   const username = useDefaultUsername()
   const visibility = useVisibility()
-
-  const someVideos = !!playerState.queue.length
 
   const play = useCallback(() => {
     if (playerStateRef.current.paused) {
@@ -142,6 +139,12 @@ const Room = () => {
       transports: ["websocket", "polling"],
     }
 
+    const handleStatus = statusText => {
+      if (statusText) {
+        setStatus(statusText)
+      }
+    }
+
     // https://github.com/facebook/create-react-app/issues/5280
     const socket = process.env.NODE_ENV === "development" ?
       io(process.env.REACT_APP_DEV_WS_URL, socketOptions) :
@@ -170,10 +173,13 @@ const Room = () => {
     socket.on("INITIAL_STATE", data => {
       setPlayerState(data.player)
       setClientsState(data.clients)
-      setInit(true)
+      handleStatus(data.player.statusText)
     })
 
-    socket.on("STATE", data => setPlayerState(data))
+    socket.on("STATE", data => {
+      setPlayerState(data)
+      handleStatus(data.statusText)
+    })
     socket.on("ELAPSED", ms => setPlayerState(ps => ({ ...ps, elapsed: ms })))
     socket.on("CLIENTS_STATE", data => setClientsState(data))
     socket.on("CLIENT", newClient => {
@@ -262,12 +268,9 @@ const Room = () => {
         <div ref={playerContainerRef} className={classes.playerContainer}>
           <div style={{ width: playerBounds[0], height: playerBounds[1], marginLeft: playerBounds[2], position: "relative" }}>
             <div className={classes.splash}>
-              <Fade in={init && (!someVideos || playerState.paused)}>
+              <Fade in={!!playerState.statusText}>
                 <Typography className={classes.splashHeader} variant="h6" style={{ display: "flex", alignItems: "center" }}>
-                  {!someVideos ? <div className={classes.splashHeaderEmoji}>{"😎"}</div> : <PauseIcon className={classes.splashHeaderIcon} />}
-                  <div className={classes.splashHeaderText}>
-                    {!someVideos ? "Welcome to YouSync" : !playerState.pauser ? "Paused" : `Paused by ${playerState.pauser}`}
-                  </div>
+                  <div className={classes.splashHeaderText}>{status}</div>
                 </Typography>
               </Fade>
             </div>
@@ -283,7 +286,7 @@ const Room = () => {
               }, [])}
               onPause={pause}
               onPlay={play}
-              onSeek={useCallback(seconds => webSocketRef.current.emit("SEEK", seconds), [])}
+              onSeek={useCallback((seconds, diff) => webSocketRef.current.emit("SEEK", seconds, diff), [])}
               playbackRate={playerState.speed}
               onPlaybackRateChange={useCallback(speed => webSocketRef.current.emit("SET_SPEED", speed), [])}
               onMute={useCallback(muted => setMuted(+muted), [])}
@@ -302,7 +305,11 @@ const Room = () => {
         queue={playerState.queue}
         clients={clientsState}
         onVideoAdd={url => webSocketRef.current.emit("VIDEO", url)}
-        onVideoClick={useCallback(videoIndex => webSocketRef.current.emit("SELECT_VIDEO", videoIndex), [])}
+        onVideoClick={useCallback(videoIndex => {
+          if (videoIndex !== playerStateRef.current.activeItem) {
+            webSocketRef.current.emit("SELECT_VIDEO", videoIndex)
+          }
+        }, [playerStateRef])}
         onVideoRemove={useCallback(videoIndex => webSocketRef.current.emit("REMOVE_VIDEO", videoIndex), [])}
         activeVideo={playerState.activeItem}
         playTime={Math.max(Math.min(playerState.elapsed / 1000, playerState.duration), 0)}
