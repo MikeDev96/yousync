@@ -163,6 +163,7 @@ const ControlledYouTubePlayer = ({
         }
 
         if (e.data === window.YT.PlayerState.PLAYING) {
+          clearSeekCheck()
           onPlay()
         }
         else if (e.data === window.YT.PlayerState.PAUSED) {
