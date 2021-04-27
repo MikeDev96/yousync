@@ -1,7 +1,7 @@
 const { EventEmitter } = require("events")
 
 class StatusManager extends EventEmitter {
-  constructor (defaultStatus = "", timeout) {
+  constructor(defaultStatus = "", timeout) {
     super()
     this.setDefault(defaultStatus)
     this.timeout = timeout

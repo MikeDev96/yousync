@@ -6,11 +6,13 @@ const YouTubeParse = require("../YouTubeParse")
 const { v4: uuid } = require("uuid")
 const pms = require("pretty-ms")
 const StatusManager = require("./StatusManager")
+const SponsorSkip = require("./SponsorSkip")
+const { prettyJoin } = require("./helpers")
 
 const DEFAULT_STATUS = "YouSync 😎 Welcome"
 
 class RoomManager extends EventEmitter {
-  constructor (id) {
+  constructor(id) {
     super()
 
     this.id = id
@@ -26,7 +28,7 @@ class RoomManager extends EventEmitter {
       speed: 1,
       statusText: DEFAULT_STATUS,
     }
-    
+
     this.statusManager = new StatusManager(DEFAULT_STATUS, 3000)
     this.statusManager.on("update", status => {
       this.state.statusText = status
@@ -35,6 +37,14 @@ class RoomManager extends EventEmitter {
       this.state.statusText = status
       this.emit("update")
     })
+
+    this.sponsorSkip = new SponsorSkip({
+      getElapsed: () => this.state.elapsed,
+    })
+      .on("sponsor", sponsor => {
+        this.seek(sponsor.endTime, null, `Skipped ${prettyJoin(sponsor.categories)}`)
+        this.emit("update")
+      })
   }
 
   addClient(id, username) {
@@ -125,7 +135,7 @@ class RoomManager extends EventEmitter {
         }
 
         if (this.state.activeItem < 0) {
-          this.nextItem()
+          this.selectVideo(0)
           this.statusManager.setDefault(`YouSync ⏸`)
         }
 
@@ -165,6 +175,8 @@ class RoomManager extends EventEmitter {
 
     // This still needs testing, but client is sending a seek which is cancelling it out :/
     this.updateTime(newItem.elapsed, delay)
+
+    this.sponsorSkip.setVideo(newItem.videoId)
   }
 
   removeVideo(videoIndex, username) {
@@ -195,6 +207,7 @@ class RoomManager extends EventEmitter {
 
   startEndTimer(delay) {
     this.stopEndTimer()
+    this.sponsorSkip.start()
     let delayed = false
     this.endHandle = setInterval(() => {
       if (delay && !delayed) {
@@ -224,7 +237,7 @@ class RoomManager extends EventEmitter {
             activeItem: newActiveItem,
             duration: nextItem.duration,
           }
-      
+
           // Add 1000ms to give clients a chance to buffer
           this.updateTime(nextItem.elapsed, true)
         }
@@ -257,20 +270,7 @@ class RoomManager extends EventEmitter {
       clearInterval(this.endHandle)
       this.endHandle = undefined
     }
-  }
-
-  nextItem() {
-    const nextItemIndex = this.state.activeItem + 1
-    const nextItem = this.state.queue[nextItemIndex]
-
-    this.state = {
-      ...this.state,
-      video: nextItem.videoId,
-      activeItem: nextItemIndex,
-      duration: nextItem.duration,
-    }
-
-    this.updateTime(nextItem.elapsed)
+    this.sponsorSkip.stop()
   }
 
   updateTime(elapsed, delay) {
