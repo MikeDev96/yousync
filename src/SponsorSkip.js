@@ -30,8 +30,16 @@ class SponsorSkip extends EventEmitter {
     this.sponsorHandle = []
   }
 
-  setVideo(videoId) {
-    sponsorBlock.getSegments(videoId, "sponsor", "intro", "outro", "interaction", "selfpromo", "music_offtopic")
+  setVideo(videoId, controls) {
+    sponsorBlock.getSegments(
+      videoId,
+      controls.sponsor && "sponsor",
+      controls.intro && "intro",
+      controls.outro && "outro",
+      controls.interaction && "interaction",
+      controls.selfpromo && "selfpromo",
+      controls.music_offtopic && "music_offtopic"
+    )
       .then(segments => {
         const ranges = this.flattenSegments(segments)
         this.sponsors = ranges

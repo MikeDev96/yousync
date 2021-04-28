@@ -9,9 +9,9 @@ class RoomFactory extends EventEmitter {
     this.rooms = {}
   }
 
-  createRoom(username, video) {
+  createRoom(username, video, controls) {
     const id = randomWords({ exactly: 3, join: "-", maxLength: 5 })
-    const room = new RoomManager(id)
+    const room = new RoomManager(id, controls)
 
     if (username && video) {
       room.addVideo(video, username).then(() => {
