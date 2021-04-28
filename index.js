@@ -4,6 +4,7 @@ const RoomsManager = require("./src/RoomFactory")
 const path = require("path")
 const express = require("express")
 const app = express()
+const bodyParser = require('body-parser');
 const http = require("http").createServer(app)
 const io = require("socket.io")(http, { pingInterval: 5000 })
 
@@ -96,6 +97,7 @@ RoomsManager.on("create", room => {
 })
 
 app.use(cors())
+app.use(bodyParser.json())
 app.use("/api", require("./src/routes"))
 
 app.use(express.static(path.join(__dirname, "client/build")))

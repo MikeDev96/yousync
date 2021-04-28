@@ -5,7 +5,7 @@ const RoomFactory = require("./RoomFactory")
 const router = express.Router()
 
 router.post("/room", (req, res) => {
-  res.send(RoomFactory.createRoom(req.query.username, req.query.video))
+  res.send(RoomFactory.createRoom(req.query.username, req.query.video, req.body))
 })
 
 router.get("/username", (req, res) => {

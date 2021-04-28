@@ -12,7 +12,7 @@ const { prettyJoin } = require("./helpers")
 const DEFAULT_STATUS = "YouSync 😎 Welcome"
 
 class RoomManager extends EventEmitter {
-  constructor(id) {
+  constructor(id, controls) {
     super()
 
     this.id = id
@@ -45,6 +45,7 @@ class RoomManager extends EventEmitter {
         this.seek(sponsor.endTime, null, `Skipped ${prettyJoin(sponsor.categories)}`)
         this.emit("update")
       })
+    this.controls = controls
   }
 
   addClient(id, username) {
@@ -178,7 +179,7 @@ class RoomManager extends EventEmitter {
     // This still needs testing, but client is sending a seek which is cancelling it out :/
     this.updateTime(newItem.elapsed, delay)
 
-    this.sponsorSkip.setVideo(newItem.videoId)
+    this.sponsorSkip.setVideo(newItem.videoId, this.controls)
   }
 
   removeVideo(videoIndex, username) {
