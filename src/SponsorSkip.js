@@ -37,7 +37,10 @@ class SponsorSkip extends EventEmitter {
         this.sponsors = ranges
       })
       .catch(err => {
-        console.log(err)
+        // 404: ResponseError: [SponsorBlock] Not Found
+        if (err.status !== 404) {
+          console.log(err)
+        }
       })
   }
 

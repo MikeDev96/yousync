@@ -81,7 +81,7 @@ module.exports = class {
           videoId: item.id,
           author: item.author.name,
           title: item.title,
-          thumbnail: item.thumbnail,
+          thumbnail: item.thumbnails[item.thumbnails.length - 1].url,
           duration: dt.parse(item.duration).total,
         }))
       }

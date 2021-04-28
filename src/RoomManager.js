@@ -99,8 +99,10 @@ class RoomManager extends EventEmitter {
   }
 
   syncElapsed() {
-    this.state.elapsed += Date.now() - this.state.tick
-    this.syncActiveItem()
+    if (!this.state.paused) {
+      this.state.elapsed += Date.now() - this.state.tick
+      this.syncActiveItem()
+    }
   }
 
   syncAndStop() {
@@ -180,11 +182,19 @@ class RoomManager extends EventEmitter {
   }
 
   removeVideo(videoIndex, username) {
+    this.removeVideoBase(videoIndex)
+    this.statusManager.set(`${username} ❌ Removed Video`)
+  }
+
+  removeVideoBase(videoIndex, delay = false) {
     if (!this.state.queue[videoIndex]) {
       return
     }
 
-    const decrementIndex = videoIndex <= this.state.activeItem
+    // If the video being removed is before the currently playing video then decrement the index so that the current video keeps playing
+    // If the video being removed is the last video and is currently playing also decrement
+    // Any other circumstance just keep the index the same
+    const decrementIndex = videoIndex < this.state.activeItem || (videoIndex === this.state.activeItem && videoIndex === (this.state.queue.length - 1))
     if (decrementIndex) {
       if (!this.state.paused) {
         this.syncAndStop()
@@ -195,20 +205,20 @@ class RoomManager extends EventEmitter {
 
     if (!this.state.queue.length) {
       this.resetPlayer()
+      this.statusManager.clear()
     }
     else {
-      if (decrementIndex) {
-        this.selectVideo(Math.max(0, this.state.activeItem - 1), false)
-      }
+      const newIndex = decrementIndex ? Math.max(0, this.state.activeItem - 1) : this.state.activeItem
+      this.selectVideo(newIndex, delay)
     }
-
-    this.statusManager.set(`${username} ❌ Removed Video`)
   }
 
   startEndTimer(delay) {
     this.stopEndTimer()
     this.sponsorSkip.start()
+
     let delayed = false
+
     this.endHandle = setInterval(() => {
       if (delay && !delayed) {
         delayed = true
@@ -216,32 +226,10 @@ class RoomManager extends EventEmitter {
       }
 
       if (this.state.elapsed >= this.state.duration * 1000) {
-        this.stopEndTimer()
-
         this.state.elapsed = this.state.duration * 1000
         this.syncActiveItem()
 
-        this.state.queue.splice(this.state.activeItem, 1)
-
-        if (!this.state.queue.length) {
-          this.resetPlayer()
-          this.statusManager.clear()
-        }
-        else {
-          const newActiveItem = this.state.queue[this.state.activeItem] ? this.state.activeItem : this.state.activeItem - 1
-          const nextItem = this.state.queue[newActiveItem]
-
-          this.state = {
-            ...this.state,
-            video: nextItem.videoId,
-            activeItem: newActiveItem,
-            duration: nextItem.duration,
-          }
-
-          // Add 1000ms to give clients a chance to buffer
-          this.updateTime(nextItem.elapsed, true)
-        }
-
+        this.removeVideoBase(this.state.activeItem, true)
         this.emit("update")
       }
       else {
