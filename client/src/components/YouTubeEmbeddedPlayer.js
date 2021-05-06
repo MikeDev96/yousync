@@ -2,6 +2,7 @@ import React, { useEffect, forwardRef, useRef, useImperativeHandle } from "react
 
 const YouTubeEmbeddedPlayer = ({
   playerRef, onReady, onStateChange, onPlaybackRateChange,
+  ...restProps
 }, ref) => {
   const tempRef = useRef({
     onReady,
@@ -41,18 +42,18 @@ const YouTubeEmbeddedPlayer = ({
           // origin: "http://localhost:3000"
         },
         events: {
-          onReady: function(e) {
+          onReady: function (e) {
             // console.log("onReady", e)
             tempRef.current.onReady(e)
           },
-          onStateChange: function(e) {
+          onStateChange: function (e) {
             // console.log("onStateChange", e)
             tempRef.current.onStateChange(e)
           },
-          onError: function(e){
+          onError: function (e) {
             console.log(e)
           },
-          onPlaybackRateChange: function(e) {
+          onPlaybackRateChange: function (e) {
             tempRef.current.onPlaybackRateChange(e)
           }
         }
@@ -78,10 +79,10 @@ const YouTubeEmbeddedPlayer = ({
   }, [playerRef])
 
   return (
-    <div id="player" ref={ref} />
-  //   <iframe ref={ref} id="player" type="text/html" width="640" height="360"
-  // src="http://www.youtube.com/embed/VQwM1oMzne4?enablejsapi=1"
-  // frameborder="0"></iframe>
+    <div id="player" ref={ref} {...restProps} />
+    //   <iframe ref={ref} id="player" type="text/html" width="640" height="360"
+    // src="http://www.youtube.com/embed/VQwM1oMzne4?enablejsapi=1"
+    // frameborder="0"></iframe>
   )
 }
 

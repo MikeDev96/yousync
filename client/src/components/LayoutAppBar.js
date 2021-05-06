@@ -1,7 +1,7 @@
 import React, { useCallback } from "react"
 import "../App.css"
 import AppBar from "@material-ui/core/AppBar"
-import { Toolbar, IconButton, Typography, makeStyles, Button } from "@material-ui/core"
+import { Toolbar, IconButton, Typography, makeStyles, Button, Fade } from "@material-ui/core"
 import "fontsource-roboto"
 import SettingsIcon from "@material-ui/icons/Settings"
 import MenuIcon from "@material-ui/icons/Menu"
@@ -10,6 +10,7 @@ import { useQueryParams, BooleanParam, withDefault } from "use-query-params"
 import { Link as RouterLink } from "react-router-dom"
 import useDefaultUsername from "../hooks/useDefaultUsername"
 import useDrawerContext from "../hooks/useDrawerContext"
+import useGlobalState from "../state/useGlobalState"
 
 const useStyles = makeStyles((theme) => ({
   homeButton: {
@@ -29,12 +30,19 @@ const useStyles = makeStyles((theme) => ({
   buttonContainer: {
     marginRight: -theme.spacing(1.5),
   },
+  centred: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+  }
 }))
 
 const LayoutAppBar = () => {
   const classes = useStyles()
   const username = useDefaultUsername()
   const { toggle, enabled } = useDrawerContext()
+  const { state } = useGlobalState()
 
   const [query, setQuery] = useQueryParams({
     settings: withDefault(BooleanParam, false),
@@ -55,6 +63,11 @@ const LayoutAppBar = () => {
             {"YouSync"}
           </Typography>
         </Button>
+        <Fade in={!!state.roomName}>
+          <Typography variant="h6" className={classes.centred}>
+            {state.roomName}
+          </Typography>
+        </Fade>
         <div className={classes.spacer} />
         <div className={classes.buttonContainer}>
           <IconButton onClick={handleOpen}>

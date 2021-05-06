@@ -11,30 +11,24 @@ import useDefaultUsername from "../hooks/useDefaultUsername"
 import RoomDrawer from "./RoomDrawer"
 import usePrevious from "../hooks/usePrevious"
 import useVisibility from "../hooks/useVisibility"
+import { setRoomName } from "../state/actions"
+import useGlobalState from "../state/useGlobalState"
 
 const useStyles = makeStyles((theme) => ({
-  root: {
-    backgroundColor: "rgba(255,255,255,.5)",
-  },
-  content: {
-    flexGrow: 1,
-    padding: theme.spacing(3),
-    height: "100vh",
-    overflow: "hidden",
-  },
   main: {
     flexGrow: 1,
     display: "grid",
-    padding: theme.spacing(3),
-    gridTemplateRows: "auto auto minmax(0, 1fr)",
+    padding: theme.spacing(2),
+    gridTemplateRows: "auto minmax(0, 1fr)",
     height: "100vh",
   },
   playerContainer: {
     overflow: "hidden",
-  },
-  chinContainer: {
     display: "flex",
-    flexDirection: "column",
+    alignItems: "center",
+  },
+  player: {
+    borderRadius: theme.spacing(0.5),
   },
   splash: {
     position: "absolute",
@@ -47,6 +41,7 @@ const useStyles = makeStyles((theme) => ({
     alignItems: "start",
     justifyContent: "center",
     flexDirection: "column",
+    borderRadius: theme.spacing(0.5),
   },
   splashHeader: {
     padding: theme.spacing(1, 2),
@@ -54,20 +49,32 @@ const useStyles = makeStyles((theme) => ({
     borderTopRightRadius: theme.spacing(1),
     borderBottomRightRadius: theme.spacing(1),
     maxWidth: 400,
-  },
-  splashHeaderIcon: {
-    fontSize: "2rem",
-    marginRight: theme.spacing(1),
-  },
-  splashHeaderEmoji: {
-    fontSize: "1em",
-    marginRight: theme.spacing(1),
+    zIndex: 1,
   },
   splashHeaderText: {
     whiteSpace: "nowrap",
     textOverflow: "ellipsis",
     overflow: "hidden",
   },
+  splashLogo: {
+    position: "absolute",
+    left: "50%",
+    top: "50%",
+    animation: "$beat 3s infinite ease-in-out",
+    marginLeft: -48,
+    marginTop: -48,
+  },
+  "@keyframes beat": {
+    "0%": {
+      transform: "scale(0.9)",
+    },
+    "50%": {
+      transform: "scale(1)",
+    },
+    "100%": {
+      transform: "scale(0.9)",
+    },
+  }
 }))
 
 const initialState = {
@@ -96,6 +103,7 @@ const Room = () => {
   const [muted, setMuted] = useState(-1)
   const [volume, setVolume] = useState(-1)
   const [status, setStatus] = useState("")
+  const [loaded, setLoaded] = useState(false)
 
   const playerRef = useRef()
   const webSocketRef = useRef()
@@ -105,6 +113,7 @@ const Room = () => {
   const playerStateRef = useLazyStateRef(playerState)
   const prevClientsState = usePrevious(clientsState)
   const diffRef = useLazyStateRef(diff)
+  const { dispatch } = useGlobalState()
 
   const username = useDefaultUsername()
   const visibility = useVisibility()
@@ -253,28 +262,26 @@ const Room = () => {
     }
   }, [ready, visibility, muted, volume])
 
+  useEffect(() => {
+    dispatch(setRoomName(roomId ? roomId.split("-").map(w => `${w[0].toUpperCase()}${w.slice(1)}`).join(" ") : ""))
+  }, [dispatch, roomId])
+
   return (
     <Fragment>
       <main className={classes.main}>
         <Toolbar variant="dense" />
-        <div style={{ marginLeft: playerBounds[2] }}>
-          <Typography variant="h5" gutterBottom={playerState.activeItem < 0}>
-            {playerState.activeItem >= 0 ? playerState.queue[playerState.activeItem].title :
-              roomId ? `Welcome, you're in room '${roomId.split("-").map(w => `${w[0].toUpperCase()}${w.slice(1)}`).join(" ")}'` : "Welcome"
-            }
-          </Typography>
-          {playerState.activeItem >= 0 && <Typography variant="subtitle1" color="textSecondary" gutterBottom>{playerState.queue[playerState.activeItem].author}</Typography>}
-        </div>
         <div ref={playerContainerRef} className={classes.playerContainer}>
           <div style={{ width: playerBounds[0], height: playerBounds[1], marginLeft: playerBounds[2], position: "relative" }}>
-            <div className={classes.splash}>
+            <div className={classes.splash} style={{ background: playerState.activeItem < 0 || !loaded ? "#282828" : null }}>
               <Fade in={!!playerState.statusText}>
                 <Typography className={classes.splashHeader} variant="h6" style={{ display: "flex", alignItems: "center" }}>
                   <div className={classes.splashHeaderText}>{status}</div>
                 </Typography>
               </Fade>
+              {(playerState.activeItem < 0 || !loaded) && <img className={classes.splashLogo} src={`${process.env.PUBLIC_URL}/favicon-96x96.png`} alt="Home" />}
             </div>
             <ControlledYouTubePlayer
+              className={classes.player}
               ytPlayerRef={ytPlayerRef}
               ref={playerRef}
               video={playerState.video}
@@ -292,6 +299,7 @@ const Room = () => {
               onMute={useCallback(muted => setMuted(+muted), [])}
               onVolume={setVolume}
               onDiff={setDiff}
+              onLoaded={setLoaded}
             />
           </div>
         </div>

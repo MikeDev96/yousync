@@ -1,4 +1,4 @@
-import { ACTION_SET_SETTINGS, ACTION_SET_USERNAME, ACTION_SET_VOLUME, ACTION_TOGGLE_MUTE } from "./actions"
+import { ACTION_SET_ROOM_NAME, ACTION_SET_SETTINGS, ACTION_SET_USERNAME, ACTION_SET_VOLUME, ACTION_TOGGLE_MUTE } from "./actions"
 
 export const reducer = (state, action) => {
   switch (action.type) {
@@ -34,6 +34,11 @@ export const reducer = (state, action) => {
           ...state.persist,
           username: action.payload.username,
         }
+      }
+    case ACTION_SET_ROOM_NAME:
+      return {
+        ...state,
+        roomName: action.payload.roomName,
       }
     default:
       return state

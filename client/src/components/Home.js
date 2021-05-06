@@ -54,7 +54,7 @@ const Home = () => {
 
   return (
     <AppContainer>
-      <Typography align="center" className={classes.title} variant="h1" component="h2" gutterBottom>
+      <Typography align="center" className={classes.title} variant="h2" component="h2" gutterBottom>
         {`Welcome to ${APP_NAME}`}
       </Typography>
       <div className={classes.buttonContainer}>

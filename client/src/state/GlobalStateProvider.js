@@ -11,6 +11,7 @@ const initialState = {
     muted: false,
     ...JSON.parse(localStorage.getItem("persist")),
   },
+  roomName: "",
 }
 
 const GlobalStateProvider = ({

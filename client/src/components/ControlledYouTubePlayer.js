@@ -6,7 +6,7 @@ const ControlledYouTubePlayer = ({
   video, paused, time, onReady,
   ytPlayerRef, onPause, onPlay, onSeek,
   playbackRate, onPlaybackRateChange, onMute, onVolume,
-  onDiff,
+  onDiff, onLoaded, ...restProps
 }, ref) => {
   const playerRef = useRef()
   const playerRef2 = useRef()
@@ -36,8 +36,9 @@ const ControlledYouTubePlayer = ({
     preBufferState.current = 0
     prevCurrentTime.current = 0
     setPreBuffered(false)
+    onLoaded(false)
     clearSeekCheck()
-  }, [video, clearSeekCheck])
+  }, [video, clearSeekCheck, onLoaded])
 
   useEffect(() => {
     if (ready) {
@@ -144,6 +145,10 @@ const ControlledYouTubePlayer = ({
         // 5 (video cued)
         // console.log(e.data)
 
+        if (e.data !== window.YT.PlayerState.UNSTARTED) {
+          onLoaded(true)
+        }
+
         if (preBufferState.current < 2) {
           if (e.data === window.YT.PlayerState.BUFFERING) {
             if (preBufferState.current === 0) {
@@ -187,9 +192,9 @@ const ControlledYouTubePlayer = ({
             const prevCurrentTimeEstimate = prevCurrentTime.current + ((Date.now() - prevCurrentTimeTick.current) / 1000)
             const seekDiff = currentTime - prevCurrentTimeEstimate
             const absSeekDiff = Math.abs(seekDiff)
-  
+
             const syncDiff = Math.abs(timeRef.current - currentTime)
-  
+
             if (absSeekDiff >= 4.8 && absSeekDiff <= 5.2 && syncDiff >= 4 && syncDiff <= 6) {
               onSeek(playerRef2.current.getCurrentTime() || 0, seekDiff < 1 ? -5 : 5)
               console.log("Seeked %s5s with arrow key", seekDiff < 1 ? "-" : "+")
@@ -199,12 +204,13 @@ const ControlledYouTubePlayer = ({
 
         prevCurrentTime.current = playerRef2.current.getCurrentTime() || 0
         prevCurrentTimeTick.current = Date.now()
-      }, [onPause, onPlay, onSeek, preBufferState, clearSeekCheck, timeRef])}
+      }, [onPause, onPlay, onSeek, preBufferState, clearSeekCheck, timeRef, onLoaded])}
       onPlaybackRateChange={useCallback(e => {
         if (e.data !== playbackRate) {
           onPlaybackRateChange(e.data)
         }
       }, [playbackRate, onPlaybackRateChange])}
+      {...restProps}
     />
   )
 }
