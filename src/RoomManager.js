@@ -45,6 +45,13 @@ class RoomManager extends EventEmitter {
         this.seek(sponsor.endTime, null, `Skipped ${prettyJoin(sponsor.categories)}`)
         this.emit("update")
       })
+      .on("segments", (videoId, segments) => {
+        const item = this.state.queue.find(item => item.videoId === videoId)
+        if (item) {
+          item.segments = segments
+          this.emit("update")
+        }
+      })
     this.controls = controls
   }
 
@@ -133,6 +140,7 @@ class RoomManager extends EventEmitter {
               id: uuid(),
               addedBy,
               elapsed: 0,
+              segments: [],
             })),
           ],
         }

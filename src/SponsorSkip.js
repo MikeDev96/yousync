@@ -43,6 +43,7 @@ class SponsorSkip extends EventEmitter {
       .then(segments => {
         const ranges = this.flattenSegments(segments)
         this.sponsors = ranges
+        this.emit("segments", videoId, segments)
       })
       .catch(err => {
         // 404: ResponseError: [SponsorBlock] Not Found

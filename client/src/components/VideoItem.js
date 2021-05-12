@@ -25,7 +25,10 @@ const VideoItem = ({
         </Fragment>
       </ListItemAvatar>
       <VideoItemText title={item.title} author={item.author} />
-      <LinearProgress classes={{ bar: classes.progressBar, root: classes.progressRoot }} variant="determinate" value={elapsed} />
+      <div className={classes.progressRoot}>
+        <LinearProgress classes={{ bar: classes.progressBar, root: classes.progressRoot }} variant="determinate" value={elapsed} />
+        {item.segments.map(seg => <div title={seg.category} key={seg.UUID} style={{ left: `${seg.startTime / item.duration * 100}%`, width: `${(seg.endTime - seg.startTime) / item.duration * 100}%`, background: colourMap[seg.category], opacity: 0.7, height: 2, position: "absolute" }} />)}
+      </div>
       <ListItemSecondaryAction>
         <IconButton className={classes.removeIconButton} edge="end" onClick={e => handleVideoRemove(e, itemIndex)}>
           <CloseIcon />
@@ -33,6 +36,15 @@ const VideoItem = ({
       </ListItemSecondaryAction>
     </ListItem>
   )
+}
+
+const colourMap = {
+  sponsor: "rgb(0, 212, 0)",
+  intro: "rgb(0, 255, 255)",
+  outro: "rgb(2, 2, 237)",
+  interation: "rgb(204, 0, 255)",
+  selfpromo: "rgb(255, 255, 0)",
+  music_offtopic: "rgb(255, 153, 0)",
 }
 
 export default memo(forwardRef(VideoItem))
