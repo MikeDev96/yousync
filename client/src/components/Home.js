@@ -69,7 +69,8 @@ const Home = () => {
             {Object.keys(controlState).map(control => {
               return (
                 <FormControlLabel
-                  control={<Checkbox name={control} defaultChecked={controlState[control]} onChange={handleControlChange} />}
+                  key={control}
+                  control={<Checkbox checked={controlState[control]} name={control} onChange={handleControlChange} />}
                   label={control[0].toUpperCase() + control.substring(1, control.length)}
                 />
               )

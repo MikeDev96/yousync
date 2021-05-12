@@ -11,6 +11,7 @@ class SponsorSkip extends EventEmitter {
 
     this.sponsors = []
     this.sponsorHandle = []
+    this.running = false
   }
 
   start() {
@@ -23,14 +24,23 @@ class SponsorSkip extends EventEmitter {
         }, sponsor.startTime * 1000 - elapsed))
       }
     })
+    this.running = true
   }
 
   stop() {
+    this.clear()
+    this.running = false
+  }
+
+  clear() {
     this.sponsorHandle.forEach(timer => clearTimeout(timer))
     this.sponsorHandle = []
   }
 
   setVideo(videoId, controls) {
+    this.clear()
+    this.sponsors = []
+
     sponsorBlock.getSegments(
       videoId,
       controls.sponsor && "sponsor",
@@ -49,6 +59,11 @@ class SponsorSkip extends EventEmitter {
         // 404: ResponseError: [SponsorBlock] Not Found
         if (err.status !== 404) {
           console.log(err)
+        }
+      })
+      .finally(() => {
+        if (this.running) {
+          this.start()
         }
       })
   }
