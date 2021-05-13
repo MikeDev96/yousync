@@ -28,7 +28,7 @@ io.on("connection", socket => {
     room.play(username)
     io.to(roomId).emit("STATE", room.state)
   })
-  
+
   socket.on("PAUSE", () => {
     room.pause(username)
     io.to(roomId).emit("STATE", room.state)
@@ -39,8 +39,8 @@ io.on("connection", socket => {
     io.to(roomId).emit("STATE", room.state)
   })
 
-  socket.on("VIDEO", videoId => {
-    room.addVideo(videoId, username)
+  socket.on("VIDEO", link => {
+    room.addVideo(link, username)
   })
 
   socket.on("SELECT_VIDEO", videoIndex => {
@@ -102,7 +102,7 @@ app.use("/api", require("./src/routes"))
 
 app.use(express.static(path.join(__dirname, "client/build")))
 
-app.get("*", function(req, res) {
+app.get("*", function (req, res) {
   res.sendFile(path.join(__dirname, "client/build", "index.html"))
 })
 

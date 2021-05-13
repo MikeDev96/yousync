@@ -8,6 +8,7 @@ const pms = require("pretty-ms")
 const StatusManager = require("./StatusManager")
 const SponsorSkip = require("./SponsorSkip")
 const { prettyJoin } = require("./helpers")
+const parseDuration = require("parse-duration")
 
 const DEFAULT_STATUS = "YouSync 😎 Welcome"
 
@@ -127,10 +128,12 @@ class RoomManager extends EventEmitter {
     this.updateTime(time * 1000)
   }
 
-  async addVideo(videoId, addedBy) {
+  async addVideo(link, addedBy) {
     try {
-      const res = await new YouTubeParse().parse(videoId)
+      const res = await new YouTubeParse().parse(link)
       if (res) {
+        const { t } = qs.parse(link)
+        const elapsed = t ? parseDuration(t) : 0
         this.state = {
           ...this.state,
           queue: [
@@ -139,7 +142,7 @@ class RoomManager extends EventEmitter {
               ...item,
               id: uuid(),
               addedBy,
-              elapsed: 0,
+              elapsed,
               segments: [],
             })),
           ],
