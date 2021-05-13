@@ -42,7 +42,7 @@ const colourMap = {
   sponsor: "rgb(0, 212, 0)",
   intro: "rgb(0, 255, 255)",
   outro: "rgb(2, 2, 237)",
-  interation: "rgb(204, 0, 255)",
+  interaction: "rgb(204, 0, 255)",
   selfpromo: "rgb(255, 255, 0)",
   music_offtopic: "rgb(255, 153, 0)",
 }
