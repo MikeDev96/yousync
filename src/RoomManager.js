@@ -132,8 +132,10 @@ class RoomManager extends EventEmitter {
     try {
       const res = await new YouTubeParse().parse(link)
       if (res) {
-        const { t } = qs.parse(link)
-        const elapsed = t ? parseDuration(t) : 0
+        const { query } = qs.parseUrl(link)
+        const { t } = query
+        const elapsed = t ? parseDuration(t.endsWith("s") ? t : `${t}s`) : 0
+
         this.state = {
           ...this.state,
           queue: [
