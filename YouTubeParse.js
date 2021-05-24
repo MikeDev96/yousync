@@ -38,7 +38,7 @@ module.exports = class {
 
   async getVideo(id) {
     try {
-      const videoInfo = await axios(`https://www.youtube.com/get_video_info?video_id=${id}&eurl=${encodeURIComponent(`https://youtube.googleapis.com/v/${id}`)}`)
+      const videoInfo = await axios(`https://www.youtube.com/get_video_info?video_id=${id}&eurl=${encodeURIComponent(`https://youtube.googleapis.com/v/${id}`)}&html5=1`)
       if (videoInfo && videoInfo.data) {
         const decodedVideoData = decodeURI(videoInfo.data)
         const queryParams = qs.parse(decodedVideoData)
