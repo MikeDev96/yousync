@@ -40,8 +40,7 @@ module.exports = class {
     try {
       const videoInfo = await axios(`https://www.youtube.com/get_video_info?video_id=${id}&eurl=${encodeURIComponent(`https://youtube.googleapis.com/v/${id}`)}&html5=1&c=TVHTML5&cver=6.20180913`)
       if (videoInfo && videoInfo.data) {
-        const decodedVideoData = decodeURI(videoInfo.data)
-        const queryParams = qs.parse(decodedVideoData)
+        const queryParams = qs.parse(videoInfo.data)
         if (queryParams && queryParams.player_response) {
           const playerResponse = JSON.parse(queryParams.player_response)
           if (playerResponse.playabilityStatus) {
