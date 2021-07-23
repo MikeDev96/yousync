@@ -1,7 +1,8 @@
 const ytpl = require("ytpl")
-const axios = require("axios")
 const dt = require("duration-timestamp")
 const qs = require("query-string")
+const { youtube } = require("@googleapis/youtube")
+const moment = require("moment")
 
 module.exports = class {
   async parse(link) {
@@ -38,33 +39,37 @@ module.exports = class {
 
   async getVideo(id) {
     try {
-      const videoInfo = await axios(`https://www.youtube.com/get_video_info?video_id=${id}&eurl=${encodeURIComponent(`https://youtube.googleapis.com/v/${id}`)}&html5=1&c=TVHTML5&cver=6.20180913`)
-      if (videoInfo && videoInfo.data) {
-        const queryParams = qs.parse(videoInfo.data)
-        if (queryParams && queryParams.player_response) {
-          const playerResponse = JSON.parse(queryParams.player_response)
-          if (playerResponse.playabilityStatus) {
-            if (playerResponse.playabilityStatus.status === "OK") {
-              const thumbails = playerResponse.videoDetails.thumbnail.thumbnails
-              // Get the 2nd best quality thumbnail
-              const thumbnail = thumbails[thumbails.length > 1 ? thumbails.length - 2 : 0]
+      const yt = youtube({
+        version: "v3",
+        auth: process.env.GOOGLE_YOUTUBE_DATA_API_V3_API_KEY,
+      })
 
-              return {
-                videoId: playerResponse.videoDetails.videoId,
-                title: playerResponse.videoDetails.title,
-                author: playerResponse.videoDetails.author,
-                thumbnail: thumbnail.url,
-                duration: parseInt(playerResponse.videoDetails.lengthSeconds),
-              }
-            }
-            else {
-              throw new Error(playerResponse.playabilityStatus.reason)
-            }
+      const res = await yt.videos.list({
+        id,
+        part: ["snippet", "contentDetails"],
+      })
+
+      if (res.status === 200) {
+        const item = res.data.items[0]
+        if (item) {
+          const snippet = item.snippet
+          const contentDetails = item.contentDetails
+
+          return {
+            videoId: id,
+            title: snippet.title,
+            author: snippet.channelTitle,
+            thumbnail: snippet.thumbnails.medium.url,
+            duration: moment.duration(contentDetails.duration).asSeconds(),
           }
         }
+        else {
+          throw new Error(`Couldn't find a video for id ${id}`)
+        }
       }
-
-      throw new Error("Failed to get player response")
+      else {
+        throw new Error(res.statusText)
+      }
     }
     catch (err) {
       console.log(err)

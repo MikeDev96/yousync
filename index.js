@@ -7,6 +7,7 @@ const app = express()
 const bodyParser = require('body-parser');
 const http = require("http").createServer(app)
 const io = require("socket.io")(http, { pingInterval: 5000 })
+require("dotenv").config()
 
 io.on("connection", socket => {
   if (!socket.handshake.query.id) {
