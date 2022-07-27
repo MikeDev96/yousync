@@ -6,7 +6,7 @@ const moment = require("moment")
 
 module.exports = class {
   async parse(link) {
-    const youtubePattern = /(?:https?:\/\/www.)?youtu(?:be.com\/watch\?v=|.be\/)([\w-]+)/g
+    const youtubePattern = /(?:https?:\/\/(?:www.)?)?(?:youtube\.com\/(?:shorts\/|watch\?v=)|youtu\.be\/)([\w-]+)/g
     const youtubeMatch = youtubePattern.exec(link)
     if (youtubeMatch) {
       try {
