@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: "yousync-server",
+      name: "yousync",
       script: "./index.js",
       out_file: "./logs/out.log",
       error_file: "./logs/err.log",
