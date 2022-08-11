@@ -17,4 +17,4 @@ jobs:
           key: ${{ secrets.KEY }}
           port: ${{ secrets.PORT }}
           script: |
-            [ -d "/var/www/yousync" ] && cd /var/www/yousync && git pull && npm i && cd client && npm i && git reset --hard && npm run build && pm2 reload yousync
+            [ -d "/home/${{ secrets.USERNAME }}/apps/yousync" ] && cd /home/${{ secrets.USERNAME }}/apps/yousync && export NVM_DIR=~/.nvm && source ~/.nvm/nvm.sh && git pull && npm i && cd client && npm i && git reset --hard && npm run build && pm2 reload yousync
