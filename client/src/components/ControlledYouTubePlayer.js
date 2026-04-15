@@ -183,9 +183,7 @@ const ControlledYouTubePlayer = ({
         if (e.data === window.YT.PlayerState.PAUSED) {
           pauseTimeoutHandle.current = setTimeout(() => {
             console.log("Real pause detected")
-            const currentTime = playerRef2.current.getCurrentTime() + 0.2
-            lastTime.current = currentTime
-            playerRef2.current.seekTo(currentTime)
+            lastTime.current = playerRef2.current.getCurrentTime()
             onPause()
           }, 200)
         }
