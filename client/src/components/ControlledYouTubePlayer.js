@@ -13,6 +13,7 @@ const ControlledYouTubePlayer = ({
   const preBufferState = useRef(0)
   const lastTime = useRef(-1)
   const pauseTimeoutHandle = useRef()
+  const ignoreSeeking = useRef(false)
 
   useImperativeHandle(ytPlayerRef, () => playerRef2.current)
   useImperativeHandle(ref, () => playerRef.current)
@@ -112,6 +113,7 @@ const ControlledYouTubePlayer = ({
 
     if (absDifference > 1) {
       console.log("Seeking to %s", time)
+      ignoreSeeking.current = true
       playerRef2.current.seekTo(time)
     }
   }, [ready, time, preBuffered, onDiff])
@@ -159,6 +161,13 @@ const ControlledYouTubePlayer = ({
         if (e.data === window.YT.PlayerState.BUFFERING) {
           clearTimeout(pauseTimeoutHandle.current)
           const currentTime = playerRef2.current.getCurrentTime()
+
+          if (ignoreSeeking.current) {
+            ignoreSeeking.current = false
+            lastTime.current = currentTime
+            return
+          }
+
           if (lastTime.current >= 0 && Math.abs(currentTime - lastTime.current) > 1.5) {
             console.log(`Seek detected: ${lastTime.current.toFixed(2)}s → ${currentTime.toFixed(2)}s`)
             onSeek(currentTime, 0)
