@@ -100,10 +100,10 @@ class RoomManager extends EventEmitter {
 
   pause(username) {
     if (!this.state.paused) {
+      this.syncAndStop()
       this.state.paused = true
       this.statusManager.setDefault(`${username} ⏸`)
       this.statusManager.set(`${username} ⏸`)
-      this.syncAndStop()
     }
   }
 
