@@ -62,16 +62,16 @@ const Home = () => {
           {"Create Room"}
         </Button>
       </div>
-      <div className={classes.buttonContainer} style={{ marginTop: '50px' }}>
+      <div className={classes.buttonContainer} style={{ marginTop: "50px" }}>
         <FormControl>
           <FormLabel>Sponsor Controls</FormLabel>
           <FormGroup>
-            {Object.keys(controlState).map(control => {
+            {sponsorControls.map(control => {
               return (
                 <FormControlLabel
-                  key={control}
-                  control={<Checkbox checked={controlState[control]} name={control} onChange={handleControlChange} />}
-                  label={control[0].toUpperCase() + control.substring(1, control.length)}
+                  key={control.value}
+                  control={<Checkbox checked={controlState[control.value]} name={control.value} onChange={handleControlChange} />}
+                  label={control.text}
                 />
               )
             })}
@@ -81,5 +81,14 @@ const Home = () => {
     </AppContainer>
   );
 }
+
+const sponsorControls = [
+  { value: "sponsor", text: "Sponsor" },
+  { value: "intro", text: "Intro" },
+  { value: "outro", text: "Outro" },
+  { value: "interaction", text: "Interaction" },
+  { value: "selfpromo", text: "Self-Promo" },
+  { value: "music_offtopic", text: "Music - Off Topic" },
+]
 
 export default Home
