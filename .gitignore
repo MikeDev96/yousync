@@ -1,4 +1,7 @@
+.env
 .env.*
+# ...but the template belongs in the repo.
+!.env.example
 node_modules
 client/debug.log
-.env
+logs

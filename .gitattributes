@@ -1,0 +1,4 @@
+# Docker builds on Linux regardless of where the checkout lives, so keep the
+# files it reads free of CRLF.
+* text=auto eol=lf
+*.sh text eol=lf
